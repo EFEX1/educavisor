@@ -1,0 +1,3270 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Análise de Pesquisa Educacional</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1C355E 0%, #2F5F9E 50%, #8DA9C4 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header-white-box {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+            border: 3px solid rgba(255,255,255,0.2);
+        }
+
+        .header-white-box h1 {
+            color: #1C355E;
+            margin: 0;
+            text-shadow: none;
+        }
+
+        .header-white-box .subtitle {
+            color: #2F5F9E;
+            font-size: 1.5rem;
+            margin: 15px 0 0 0;
+            text-shadow: none;
+            font-weight: 600;
+        }
+
+        .header-logo {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .logo-image {
+            max-width: 140px;
+            width: 100%;
+            height: auto;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+            transition: transform 0.3s ease;
+        }
+
+        .logo-image:hover {
+            transform: scale(1.05);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .upload-section {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .upload-section.minimized {
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .upload-section.minimized h2 {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+
+        .upload-section.minimized p {
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            margin: 20px 0;
+        }
+
+        .file-input {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-input-button {
+            background: linear-gradient(45deg, #1C355E, #2F5F9E);
+            color: #FFFFFF;
+            padding: 15px 30px;
+            border-radius: 10px;
+            border: none;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-block;
+            box-shadow: 0 4px 15px rgba(28, 53, 94, 0.3);
+        }
+
+        .file-input-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .loading {
+            display: none;
+            margin: 20px 0;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #1C355E;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .dashboard {
+            display: none;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+            position: relative;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .hover-card {
+            cursor: pointer;
+            position: relative;
+        }
+
+        .hover-card .hover-icon {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 1.2rem;
+            opacity: 0.6;
+            transition: opacity 0.3s ease;
+        }
+
+        .hover-card:hover .hover-icon {
+            opacity: 1;
+        }
+
+        .hover-tooltip {
+            position: absolute;
+            background: linear-gradient(135deg, #1C355E 0%, #2F5F9E 50%, #6A5ACD 100%);
+            color: #FFFFFF;
+            padding: 20px;
+            border-radius: 15px;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            z-index: 1000;
+            min-width: 280px;
+            max-width: 380px;
+            box-shadow: 0 15px 35px rgba(28, 53, 94, 0.3), 0 5px 15px rgba(28, 53, 94, 0.2);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(15px) scale(0.9);
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            pointer-events: none;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            will-change: opacity, visibility, transform;
+        }
+
+        .hover-tooltip.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0) scale(1);
+        }
+
+        .hover-tooltip::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 30px;
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-bottom: 10px solid #1C355E;
+            filter: drop-shadow(0 -2px 4px rgba(28, 53, 94, 0.2));
+        }
+
+        .tooltip-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 12px;
+            color: #fff;
+            border-bottom: 2px solid rgba(255,255,255,0.2);
+            padding-bottom: 8px;
+        }
+
+        .tooltip-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .tooltip-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .tooltip-label {
+            flex: 1;
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .tooltip-value {
+            font-weight: bold;
+            font-size: 0.95rem;
+            margin-left: 10px;
+            background: rgba(255,255,255,0.15);
+            padding: 2px 8px;
+            border-radius: 12px;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        .tooltip-total {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 2px solid rgba(255,255,255,0.2);
+            text-align: center;
+            font-weight: bold;
+            font-size: 1rem;
+            color: #fff;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #1C355E;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(28, 53, 94, 0.2);
+        }
+
+        .stat-label {
+            font-size: 1rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: bold;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .chart-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+            text-align: center;
+        }
+
+        .insights-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .insights-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+            text-align: center;
+        }
+
+        .insight-item {
+            background: linear-gradient(135deg, #f8faff 0%, #CBD7E6 100%);
+            border-left: 4px solid #1C355E;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            border-radius: 0 10px 10px 0;
+            box-shadow: 0 2px 8px rgba(28, 53, 94, 0.1);
+        }
+
+        .insight-item h4 {
+            color: #1C355E;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .data-table {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .table th,
+        .table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .table th {
+            background: linear-gradient(135deg, #1C355E 0%, #2F5F9E 100%);
+            color: #FFFFFF;
+            font-weight: bold;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+
+        .table tr:hover {
+            background: #f5f5f5;
+        }
+
+        .report-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .download-btn {
+            background: linear-gradient(45deg, #1C355E, #2F5F9E);
+            color: #FFFFFF;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(28, 53, 94, 0.3);
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .generate-report-btn {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: #FFFFFF;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            margin: 20px auto;
+            display: block;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+            font-weight: bold;
+        }
+
+        .generate-report-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        }
+
+        .logout-btn {
+            background: linear-gradient(45deg, #dc3545, #c82333);
+            color: #FFFFFF;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+            font-weight: bold;
+        }
+
+        .logout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
+            background: linear-gradient(45deg, #c82333, #a71e2a);
+        }
+
+        .file-status {
+            margin-top: 15px;
+            padding: 10px;
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 8px;
+            color: #155724;
+            display: none;
+        }
+
+        .footer-section {
+            background: linear-gradient(135deg, #1C355E 0%, #2F5F9E 100%);
+            color: #FFFFFF;
+            padding: 30px 0;
+            margin-top: 50px;
+            text-align: center;
+            box-shadow: 0 -5px 20px rgba(28, 53, 94, 0.2);
+        }
+
+        .footer-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .footer-info {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .copyright {
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 0;
+            color: #ecf0f1;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .developer {
+            font-size: 0.9rem;
+            margin: 0;
+            color: #bdc3c7;
+            font-style: italic;
+        }
+
+        .footer-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #6A5ACD 0%, #1C355E 100%);
+        }
+
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header-white-box {
+                padding: 20px;
+                margin-bottom: 20px;
+            }
+            
+            .header-white-box h1 {
+                font-size: 2rem;
+            }
+
+            .header-white-box .subtitle {
+                font-size: 1.3rem;
+            }
+
+            .header-logo {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .logo-image {
+                max-width: 100px;
+            }
+
+            .footer-section {
+                padding: 20px 0;
+                margin-top: 30px;
+            }
+
+            .copyright {
+                font-size: 0.9rem;
+            }
+
+            .developer {
+                font-size: 0.8rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header-white-box {
+                padding: 15px;
+            }
+            
+            .logo-image {
+                max-width: 80px;
+            }
+            
+            .header-white-box h1 {
+                font-size: 1.8rem;
+            }
+
+            .header-white-box .subtitle {
+                font-size: 1.2rem;
+            }
+        }
+
+        @media (min-width: 1200px) {
+            .logo-image {
+                max-width: 160px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-white-box">
+                <div class="header-logo">
+                    <img src="https://i.ibb.co/Ld7f2SqF/educavisor.png" alt="EDUCAVISOR Logo" class="logo-image">
+                    <h1>EDUCAVISOR - Conselho em Dados</h1>
+                </div>
+                <h2 class="subtitle">Relatório Analítico dos Resultados do Pré-Conselho Escolar</h2>
+            </div>
+            
+            <div id="headerInfo" style="display: none; background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; margin: 20px 0; text-align: left; backdrop-filter: blur(10px);">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 15px;">
+                    <div>
+                        <strong>🏫 Unidade Escolar:</strong><br>
+                        <span id="unidadeEscolar">-</span>
+                    </div>
+                    <div>
+                        <strong>👥 Turmas Avaliadas:</strong><br>
+                        <span id="turmasAvaliadas">-</span>
+                    </div>
+                    <div>
+                        <strong>📅 Período de Aplicação:</strong><br>
+                        <span id="periodoAplicacao">-</span>
+                    </div>
+                    <div>
+                        <strong>👨‍💼 Responsável Técnico:</strong><br>
+                        <span>Gestor Pedagógico</span>
+                    </div>
+                </div>
+                <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; font-size: 0.95rem; line-height: 1.6;">
+                    <p style="margin: 0;">Este relatório apresenta os principais dados coletados junto aos estudantes, professores e demais envolvidos no processo pedagógico, com base nas respostas do instrumento aplicado no contexto do Pré-Conselho Escolar.</p>
+                </div>
+            </div>
+            
+            <div id="uploadPrompt">
+                <p>Faça upload do arquivo CSV da pesquisa para gerar relatórios automáticos</p>
+            </div>
+            
+            <div id="logoutSection" style="display: none; text-align: center; margin-top: 20px;">
+                <button id="logoutBtn" class="logout-btn">
+                    🚪 Desconectar Dados
+                </button>
+                <p style="margin-top: 10px; color: #666; font-size: 0.9rem;">
+                    Clique para limpar os dados e carregar um novo arquivo
+                </p>
+            </div>
+        </div>
+
+        <div class="upload-section" id="uploadSection">
+            <h2>📁 Upload do Arquivo CSV</h2>
+            <p>Selecione o arquivo CSV da pesquisa educacional para análise</p>
+            
+            <div class="file-input-wrapper">
+                <input type="file" id="csvFile" class="file-input" accept=".csv,text/csv,application/vnd.ms-excel" />
+                <label for="csvFile" class="file-input-button">
+                    Escolher Arquivo CSV
+                </label>
+            </div>
+            
+            <div class="file-status" id="fileStatus">
+                <!-- Status do arquivo será mostrado aqui -->
+            </div>
+            
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Processando dados...</p>
+            </div>
+        </div>
+
+        <div class="dashboard" id="dashboard">
+            <div class="stats-grid" id="statsGrid">
+                <!-- Cards de estatísticas serão inseridos aqui -->
+            </div>
+
+            <div class="charts-grid" id="chartsGrid">
+                <!-- Gráficos serão inseridos aqui -->
+            </div>
+
+            <div class="insights-section">
+                <h2 class="insights-title">🎯 Filtros de Análise</h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px;">
+                    <div style="text-align: center;">
+                        <label for="turmaSelect" style="font-size: 1.1rem; font-weight: bold; margin-right: 15px; display: block; margin-bottom: 10px;">📚 Filtrar por Turma:</label>
+                        <select id="turmaSelect" style="padding: 10px 15px; font-size: 1rem; border: 2px solid #1C355E; border-radius: 8px; background: white; cursor: pointer; box-shadow: 0 2px 8px rgba(28, 53, 94, 0.1); width: 100%; max-width: 250px;">
+                            <option value="">-- Todas as Turmas --</option>
+                        </select>
+                    </div>
+                    <div style="text-align: center;">
+                        <label for="disciplinaSelect" style="font-size: 1.1rem; font-weight: bold; margin-right: 15px; display: block; margin-bottom: 10px;">📖 Analisar Disciplina:</label>
+                        <select id="disciplinaSelect" style="padding: 10px 15px; font-size: 1rem; border: 2px solid #1C355E; border-radius: 8px; background: white; cursor: pointer; box-shadow: 0 2px 8px rgba(28, 53, 94, 0.1); width: 100%; max-width: 250px;">
+                            <option value="">-- Escolha uma disciplina --</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="filtroInfo" style="display: none; text-align: center; margin-bottom: 20px; padding: 15px; background: linear-gradient(135deg, #e8f2ff 0%, #f0f8ff 100%); border-radius: 10px; border-left: 4px solid #1C355E;">
+                    <p style="margin: 0; font-size: 1.1rem; color: #1C355E; font-weight: bold;">
+                        <span id="filtroTexto">Visualizando dados filtrados</span>
+                    </p>
+                </div>
+                <div id="disciplinaCharts" style="display: none;">
+                    <div class="charts-grid" id="disciplinaChartsGrid">
+                        <!-- Gráficos da disciplina selecionada serão inseridos aqui -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="insights-section">
+                <h2 class="insights-title">💡 Insights Principais</h2>
+                <div id="insightsContainer">
+                    <!-- Insights serão inseridos aqui -->
+                </div>
+            </div>
+
+            <div class="insights-section">
+                <h2 class="insights-title">💬 Análise Qualitativa das Percepções Estudantis</h2>
+                <div id="comentariosContainer">
+                    <!-- Comentários serão inseridos aqui -->
+                </div>
+            </div>
+
+            <div class="data-table">
+                <h2 class="chart-title">📋 Dados Detalhados</h2>
+                <div id="tableContainer">
+                    <!-- Tabela será inserida aqui -->
+                </div>
+            </div>
+
+            <div class="report-section">
+                <h2 class="chart-title">📄 Relatório Executivo</h2>
+                <div id="reportContent">
+                    <!-- Relatório será inserido aqui -->
+                </div>
+            </div>
+
+            <div class="insights-section" style="text-align: center; margin-top: 60px; margin-bottom: 120px;">
+                <button id="generateReportBtn" class="generate-report-btn">
+                    📊 Gerar Relatório Completo
+                </button>
+                <p style="margin-top: 10px; color: #666; font-size: 0.9rem;">
+                    Clique para abrir o relatório completo em uma nova aba
+                </p>
+            </div>
+
+        </div>
+    </div>
+
+    <footer class="footer-section">
+        <div class="footer-content">
+            <div class="footer-info">
+                <p class="copyright">© 2025 Luiz Alessandro Tecnologia Educacional. Todos os direitos reservados</p>
+                <p class="developer">Desenvolvido por Luiz Alessandro da Silva.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        let csvData = [];
+        let processedData = {};
+        let currentFilter = { turma: '', disciplina: '' };
+
+        function extractHeaderInfo(fileName) {
+            console.log('Extraindo informações do cabeçalho para arquivo:', fileName);
+            
+            // Remover extensão do arquivo
+            const nomeArquivo = fileName.replace(/\.(csv|CSV)$/, '');
+            console.log('Nome do arquivo sem extensão:', nomeArquivo);
+            
+            let unidadeEscolar = 'Não identificada';
+            let turmas = 'Não identificada';
+            
+            // Verificar se existe hífen no nome do arquivo
+            if (nomeArquivo.includes(' - ')) {
+                // Dividir pelo padrão " - " (espaço-hífen-espaço)
+                const partes = nomeArquivo.split(' - ');
+                unidadeEscolar = partes[0].trim();
+                turmas = partes[1] ? partes[1].trim() : 'Não identificada';
+                console.log('Unidade Escolar extraída:', unidadeEscolar);
+                console.log('Turma extraída:', turmas);
+            } else {
+                // Se não houver hífen, usar o nome completo como unidade escolar
+                unidadeEscolar = nomeArquivo;
+                console.log('Usando nome completo como unidade escolar:', unidadeEscolar);
+            }
+            
+            // Extrair período das datas dos carimbos de data/hora
+            console.log('Procurando carimbos de data/hora nos dados...');
+            
+            // Verificar diferentes possíveis nomes de colunas de timestamp
+            const possibleTimestampColumns = [
+                'Carimbo de data/hora',
+                'Timestamp',
+                'Data/Hora',
+                'Data e Hora',
+                'Carimbo de data e hora'
+            ];
+            
+            let timestampColumn = null;
+            for (const col of possibleTimestampColumns) {
+                if (csvData.length > 0 && csvData[0].hasOwnProperty(col)) {
+                    timestampColumn = col;
+                    console.log('Coluna de timestamp encontrada:', col);
+                    break;
+                }
+            }
+            
+            let periodoAplicacao = 'Não identificado';
+            
+            if (timestampColumn && csvData.length > 0) {
+                const carimbos = csvData
+                    .map(row => row[timestampColumn])
+                    .filter(carimbo => carimbo && carimbo.trim())
+                    .map(carimbo => {
+                        console.log('Processando carimbo:', carimbo);
+                        let date = null;
+                        
+                        // Extrair apenas a parte da data (antes do espaço)
+                        const datePart = carimbo.split(' ')[0];
+                        console.log('Parte da data extraída:', datePart);
+                        
+                        // Formato MM/DD/AAAA (formato americano)
+                        if (datePart.includes('/')) {
+                            const parts = datePart.split('/');
+                            if (parts.length === 3) {
+                                const month = parseInt(parts[0]);
+                                const day = parseInt(parts[1]);
+                                const year = parseInt(parts[2]);
+                                
+                                console.log(`Convertendo: Mês=${month}, Dia=${day}, Ano=${year}`);
+                                
+                                // Criar data no formato correto (ano, mês-1, dia)
+                                date = new Date(year, month - 1, day);
+                                console.log('Data criada:', date);
+                            }
+                        }
+                        
+                        return date && !isNaN(date.getTime()) ? date : null;
+                    })
+                    .filter(date => date !== null)
+                    .sort((a, b) => a - b);
+                
+                console.log('Carimbos processados:', carimbos.length);
+                
+                if (carimbos.length > 0) {
+                    const dataInicio = carimbos[0].toLocaleDateString('pt-BR');
+                    const dataFim = carimbos[carimbos.length - 1].toLocaleDateString('pt-BR');
+                    
+                    console.log('Data início:', dataInicio);
+                    console.log('Data fim:', dataFim);
+                    
+                    if (dataInicio === dataFim) {
+                        periodoAplicacao = dataInicio;
+                    } else {
+                        periodoAplicacao = `${dataInicio} a ${dataFim}`;
+                    }
+                    console.log('Período de aplicação final:', periodoAplicacao);
+                }
+            } else {
+                console.log('Nenhuma coluna de timestamp encontrada ou dados vazios');
+            }
+            
+            // Atualizar elementos do cabeçalho
+            const unidadeElement = document.getElementById('unidadeEscolar');
+            const turmasElement = document.getElementById('turmasAvaliadas');
+            const periodoElement = document.getElementById('periodoAplicacao');
+            
+            if (unidadeElement) {
+                unidadeElement.textContent = unidadeEscolar;
+                console.log('Unidade escolar atualizada no DOM');
+            }
+            if (turmasElement) {
+                turmasElement.textContent = turmas;
+                console.log('Turmas atualizadas no DOM');
+            }
+            if (periodoElement) {
+                periodoElement.textContent = periodoAplicacao;
+                console.log('Período atualizado no DOM');
+            }
+        }
+
+
+
+        // Configurar evento do botão de logout quando a página carrega
+        document.addEventListener('DOMContentLoaded', function() {
+            setupLogoutButton();
+        });
+
+        // Função para configurar o botão de logout
+        function setupLogoutButton() {
+            console.log('🔧 Configurando botão de logout...');
+            
+            // Usar delegação de eventos para garantir que funcione mesmo após mudanças no DOM
+            document.addEventListener('click', function(event) {
+                if (event.target && event.target.id === 'logoutBtn') {
+                    console.log('🔴 Botão desconectar clicado via delegação');
+                    event.preventDefault();
+                    
+                    // Confirmar ação
+                    if (confirm('Tem certeza que deseja desconectar os dados? Todos os dados carregados serão perdidos.')) {
+                        console.log('✅ Usuário confirmou desconexão');
+                        logoutData();
+                    } else {
+                        console.log('❌ Usuário cancelou desconexão');
+                    }
+                }
+            });
+            
+            console.log('✅ Delegação de eventos configurada para botão logout');
+        }
+
+        document.getElementById('csvFile').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (!file) {
+                console.log('❌ Nenhum arquivo selecionado');
+                return;
+            }
+
+            console.log('=== DIAGNÓSTICO COMPLETO DO ARQUIVO ===');
+            console.log('📁 Nome do arquivo:', file.name);
+            console.log('📄 Tipo MIME:', file.type || 'não detectado');
+            console.log('📏 Tamanho:', file.size, 'bytes');
+            console.log('📅 Última modificação:', new Date(file.lastModified).toLocaleString('pt-BR'));
+            
+            // Verificar extensão do arquivo
+            const fileName = file.name.toLowerCase();
+            const hasCSVExtension = fileName.endsWith('.csv');
+            
+            console.log('🔍 Extensão .csv detectada:', hasCSVExtension);
+            
+            // Aceitar arquivos com extensão .csv independente do tipo MIME
+            if (!hasCSVExtension) {
+                console.error('❌ Arquivo não é CSV');
+                alert('Por favor, selecione um arquivo com extensão .csv');
+                return;
+            }
+
+            console.log('✅ Arquivo CSV aceito para processamento');
+            
+            // Mostrar loading
+            const loadingElement = document.getElementById('loading');
+            const fileStatusElement = document.getElementById('fileStatus');
+            
+            loadingElement.style.display = 'block';
+            fileStatusElement.style.display = 'none';
+            
+            // Criar FileReader
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                try {
+                    const content = e.target.result;
+                    
+                    console.log('=== ANÁLISE DO CONTEÚDO ===');
+                    console.log('📊 Total de caracteres:', content.length);
+                    
+                    if (content.length === 0) {
+                        throw new Error('Arquivo está vazio');
+                    }
+                    
+                    // Mostrar amostra do conteúdo
+                    const firstLines = content.split('\n').slice(0, 3);
+                    console.log('📋 Primeiras 3 linhas:');
+                    firstLines.forEach((line, index) => {
+                        console.log(`Linha ${index + 1}:`, line.substring(0, 100) + (line.length > 100 ? '...' : ''));
+                    });
+                    
+                    // Detectar delimitador automaticamente
+                    const firstLine = content.split('\n')[0];
+                    const commaCount = (firstLine.match(/,/g) || []).length;
+                    const semicolonCount = (firstLine.match(/;/g) || []).length;
+                    const tabCount = (firstLine.match(/\t/g) || []).length;
+                    
+                    console.log('🔍 Análise de delimitadores na primeira linha:');
+                    console.log('   Vírgulas (,):', commaCount);
+                    console.log('   Ponto e vírgulas (;):', semicolonCount);
+                    console.log('   Tabs (\\t):', tabCount);
+                    
+                    let delimiter = ','; // padrão
+                    if (semicolonCount > commaCount && semicolonCount > tabCount) {
+                        delimiter = ';';
+                    } else if (tabCount > commaCount && tabCount > semicolonCount) {
+                        delimiter = '\t';
+                    }
+                    
+                    console.log('✅ Delimitador escolhido:', delimiter === '\t' ? '\\t (tab)' : delimiter);
+                    
+                    // Configurar Papa Parse com opções robustas
+                    const parseConfig = {
+                        header: true,
+                        skipEmptyLines: 'greedy',
+                        delimiter: delimiter,
+                        encoding: 'UTF-8',
+                        dynamicTyping: false, // Manter tudo como string inicialmente
+                        transformHeader: function(header) {
+                            const cleaned = header.trim().replace(/^\uFEFF/, ''); // Remove BOM se presente
+                            console.log('🏷️ Cabeçalho processado:', `"${header}" → "${cleaned}"`);
+                            return cleaned;
+                        },
+                        transform: function(value, header) {
+                            // Limpar valores e remover aspas extras
+                            if (typeof value === 'string') {
+                                return value.trim().replace(/^["']|["']$/g, '');
+                            }
+                            return value;
+                        },
+                        complete: function(results) {
+                            console.log('=== RESULTADO DO PAPA PARSE ===');
+                            console.log('📊 Total de linhas processadas:', results.data.length);
+                            console.log('⚠️ Erros encontrados:', results.errors.length);
+                            console.log('📋 Colunas detectadas:', results.meta.fields?.length || 0);
+                            
+                            if (results.errors.length > 0) {
+                                console.log('❌ Detalhes dos erros:');
+                                results.errors.forEach((error, index) => {
+                                    console.log(`   Erro ${index + 1}:`, error);
+                                });
+                            }
+                            
+                            if (results.meta.fields) {
+                                console.log('📝 Lista de colunas:');
+                                results.meta.fields.forEach((field, index) => {
+                                    console.log(`   ${index + 1}. "${field}"`);
+                                });
+                            }
+                            
+                            // Verificar se temos dados
+                            if (!results.data || results.data.length === 0) {
+                                throw new Error('Nenhuma linha de dados foi encontrada no arquivo');
+                            }
+                            
+                            // Mostrar amostra dos dados
+                            console.log('📋 Amostra dos dados (primeiras 2 linhas):');
+                            results.data.slice(0, 2).forEach((row, index) => {
+                                console.log(`   Linha ${index + 1}:`, row);
+                            });
+                            
+                            // Armazenar dados globalmente
+                            csvData = results.data;
+                            
+                            // Processar os dados
+                            console.log('=== INICIANDO PROCESSAMENTO DOS DADOS ===');
+                            processData();
+                            
+                            if (processedData.totalRespostas === 0) {
+                                throw new Error('Nenhuma resposta válida foi encontrada após o processamento. Verifique se as colunas estão no formato esperado.');
+                            }
+                            
+                            console.log('✅ Processamento concluído com sucesso!');
+                            console.log('📊 Total de respostas válidas:', processedData.totalRespostas);
+                            
+                            // Extrair informações do cabeçalho do arquivo
+                            extractHeaderInfo(file.name);
+                            
+                            // Gerar o dashboard
+                            generateDashboard();
+                            
+                            // Atualizar a interface
+                            updateInterface(file.name);
+                            
+                            // Botão de logout já configurado via delegação de eventos
+                            
+                        },
+                        error: function(error) {
+                            throw new Error('Erro do Papa Parse: ' + error.message);
+                        }
+                    };
+                    
+                    // Executar o parsing
+                    console.log('🚀 Iniciando parsing com Papa Parse...');
+                    Papa.parse(content, parseConfig);
+                    
+                } catch (error) {
+                    console.error('❌ ERRO CRÍTICO:', error.message);
+                    console.error('📍 Stack trace:', error.stack);
+                    
+                    loadingElement.style.display = 'none';
+                    
+                    alert(`Erro ao processar o arquivo CSV:\n\n${error.message}\n\nVerifique o console (F12) para mais detalhes e certifique-se de que:\n• O arquivo é um CSV válido\n• Contém dados nas colunas esperadas\n• Não está corrompido`);
+                }
+            };
+            
+            reader.onerror = function(error) {
+                console.error('❌ Erro ao ler o arquivo:', error);
+                loadingElement.style.display = 'none';
+                alert('Erro ao ler o arquivo. Verifique se o arquivo não está corrompido e tente novamente.');
+            };
+            
+            // Ler o arquivo como texto UTF-8
+            console.log('📖 Iniciando leitura do arquivo...');
+            reader.readAsText(file, 'UTF-8');
+        });
+
+        function updateInterface(fileName) {
+            const uploadSection = document.getElementById('uploadSection');
+            const fileStatus = document.getElementById('fileStatus');
+            const headerInfo = document.getElementById('headerInfo');
+            const uploadPrompt = document.getElementById('uploadPrompt');
+            const loadingElement = document.getElementById('loading');
+            const dashboard = document.getElementById('dashboard');
+            const logoutSection = document.getElementById('logoutSection');
+            
+            // Minimizar seção de upload
+            uploadSection.classList.add('minimized');
+            
+            // Mostrar status do arquivo
+            fileStatus.style.display = 'block';
+            fileStatus.innerHTML = `✅ Arquivo carregado com sucesso: <strong>${fileName}</strong><br>📊 ${processedData.totalRespostas} respostas válidas processadas`;
+            
+            // Mostrar informações do cabeçalho
+            headerInfo.style.display = 'block';
+            
+            // Ocultar prompt de upload
+            uploadPrompt.style.display = 'none';
+            
+            // Mostrar botão de logout
+            logoutSection.style.display = 'block';
+            
+            // Ocultar loading
+            loadingElement.style.display = 'none';
+            
+            // Mostrar dashboard
+            dashboard.style.display = 'block';
+            
+            console.log('✅ Interface atualizada com sucesso!');
+        }
+
+
+
+        function logoutData() {
+            console.log('🚀 Iniciando processo de desconexão de dados...');
+            
+            try {
+                // Limpar dados globais
+                csvData = [];
+                processedData = {};
+                console.log('📊 Dados globais limpos');
+                
+                // Resetar elementos da interface
+                const uploadSection = document.getElementById('uploadSection');
+                const fileStatus = document.getElementById('fileStatus');
+                const headerInfo = document.getElementById('headerInfo');
+                const uploadPrompt = document.getElementById('uploadPrompt');
+                const loadingElement = document.getElementById('loading');
+                const dashboard = document.getElementById('dashboard');
+                const logoutSection = document.getElementById('logoutSection');
+                const csvFileInput = document.getElementById('csvFile');
+                
+                console.log('🔍 Elementos da interface localizados');
+                
+                // Restaurar seção de upload
+                if (uploadSection) {
+                    uploadSection.classList.remove('minimized');
+                    console.log('📤 Seção de upload restaurada');
+                }
+                
+                // Ocultar status do arquivo
+                if (fileStatus) {
+                    fileStatus.style.display = 'none';
+                    fileStatus.innerHTML = '';
+                    console.log('📄 Status do arquivo ocultado');
+                }
+                
+                // Ocultar informações do cabeçalho
+                if (headerInfo) {
+                    headerInfo.style.display = 'none';
+                    console.log('📋 Informações do cabeçalho ocultadas');
+                }
+                
+                // Mostrar prompt de upload
+                if (uploadPrompt) {
+                    uploadPrompt.style.display = 'block';
+                    console.log('💬 Prompt de upload exibido');
+                }
+                
+                // Ocultar botão de logout
+                if (logoutSection) {
+                    logoutSection.style.display = 'none';
+                    console.log('🚪 Seção de logout ocultada');
+                }
+                
+                // Ocultar loading
+                if (loadingElement) {
+                    loadingElement.style.display = 'none';
+                    console.log('⏳ Loading ocultado');
+                }
+                
+                // Ocultar dashboard
+                if (dashboard) {
+                    dashboard.style.display = 'none';
+                    console.log('📊 Dashboard ocultado');
+                }
+                
+                // Limpar input de arquivo
+                if (csvFileInput) {
+                    csvFileInput.value = '';
+                    console.log('📁 Input de arquivo limpo');
+                }
+                
+                // Limpar conteúdo dos containers
+                const containers = [
+                    'statsGrid', 'chartsGrid', 'disciplinaChartsGrid', 
+                    'insightsContainer', 'comentariosContainer', 
+                    'tableContainer', 'reportContent'
+                ];
+                
+                containers.forEach(containerId => {
+                    const container = document.getElementById(containerId);
+                    if (container) {
+                        container.innerHTML = '';
+                        console.log(`🧹 Container ${containerId} limpo`);
+                    }
+                });
+                
+                // Resetar seletores
+                const disciplinaSelect = document.getElementById('disciplinaSelect');
+                if (disciplinaSelect) {
+                    disciplinaSelect.innerHTML = '<option value="">-- Escolha uma disciplina --</option>';
+                    console.log('📚 Seletor de disciplinas resetado');
+                }
+                
+                const turmaSelect = document.getElementById('turmaSelect');
+                if (turmaSelect) {
+                    turmaSelect.innerHTML = '<option value="">-- Todas as Turmas --</option>';
+                    console.log('🎯 Seletor de turmas resetado');
+                }
+                
+                // Resetar filtros
+                currentFilter = { turma: '', disciplina: '' };
+                console.log('🔄 Filtros resetados');
+                
+                // Ocultar gráficos de disciplinas e informações de filtro
+                const disciplinaCharts = document.getElementById('disciplinaCharts');
+                if (disciplinaCharts) {
+                    disciplinaCharts.style.display = 'none';
+                    console.log('📈 Gráficos de disciplinas ocultados');
+                }
+                
+                const filtroInfo = document.getElementById('filtroInfo');
+                if (filtroInfo) {
+                    filtroInfo.style.display = 'none';
+                    console.log('ℹ️ Informações de filtro ocultadas');
+                }
+                
+                // Resetar informações do cabeçalho
+                const headerElements = [
+                    { id: 'unidadeEscolar', value: '-' },
+                    { id: 'turmasAvaliadas', value: '-' },
+                    { id: 'periodoAplicacao', value: '-' }
+                ];
+                
+                headerElements.forEach(element => {
+                    const el = document.getElementById(element.id);
+                    if (el) {
+                        el.textContent = element.value;
+                        console.log(`🏷️ ${element.id} resetado para "${element.value}"`);
+                    }
+                });
+                
+                console.log('✅ Processo de desconexão concluído com sucesso!');
+                
+                // Mostrar mensagem de confirmação
+                alert('✅ Dados desconectados com sucesso!\n\nVocê pode agora carregar um novo arquivo CSV.');
+                
+            } catch (error) {
+                console.error('❌ Erro durante a desconexão:', error);
+                alert('❌ Erro ao desconectar dados. Recarregue a página se necessário.');
+            }
+        }
+
+        function processData(filtroTurma = '') {
+            console.log('🔄 Processando dados com filtro de turma:', filtroTurma || 'Todas as turmas');
+            
+            // Filtrar dados válidos (ignorar cabeçalho e linhas vazias)
+            let validData = csvData.filter(row => {
+                // Verificar se a linha tem pelo menos um campo preenchido que não seja cabeçalho
+                const hasValidData = Object.values(row).some(value => 
+                    value && value.trim() && 
+                    !value.includes('FREQUÊNCIA NAS AULAS') && 
+                    !value.includes('PARTICIPAÇÃO NAS AULAS')
+                );
+                return hasValidData;
+            });
+
+            console.log(`📊 Total de dados válidos antes do filtro: ${validData.length}`);
+
+            // Aplicar filtro de turma se especificado
+            if (filtroTurma && filtroTurma.trim()) {
+                const dadosAntesFiltro = validData.length;
+                validData = validData.filter(row => {
+                    // Buscar coluna de turma com diferentes possíveis nomes
+                    const turmaAluno = row['Turma'] || row['TURMA'] || row['turma'] || 
+                                     row['6 Turma'] || row['6 TURMA'] || row['6 turma'] ||
+                                     row['Qual a sua turma?'] || row['QUAL A SUA TURMA?'] || '';
+                    
+                    const turmaComparar = turmaAluno ? turmaAluno.trim() : '';
+                    const filtroComparar = filtroTurma.trim();
+                    
+                    console.log(`🔍 Comparando: "${turmaComparar}" === "${filtroComparar}"`);
+                    
+                    return turmaComparar === filtroComparar;
+                });
+                console.log(`📊 Dados após filtro de turma "${filtroTurma}": ${validData.length} registros (eram ${dadosAntesFiltro})`);
+                
+                if (validData.length === 0) {
+                    console.warn('⚠️ Nenhum dado encontrado para a turma selecionada!');
+                }
+            }
+            
+            processedData = {
+                totalRespostas: validData.length,
+                frequenciaAulas: {},
+                participacaoAulas: {},
+                respeitoColegas: {},
+                respeitoProfessores: {},
+                avaliacaoTurma: {},
+                avaliacaoEscola: {},
+                disciplinas: {},
+                segundoProfessor: {
+                    inclusao: {},
+                    lideranca: {},
+                    frequencia: {}
+                },
+                comentarios: {
+                    sentimentos: [],
+                    situacoesProfessores: []
+                },
+                turmas: {},
+                filtroAtivo: filtroTurma
+            };
+
+            validData.forEach(row => {
+                // Coletar informações de turma - buscar em diferentes possíveis nomes de coluna
+                const turmaAluno = row['Turma'] || row['TURMA'] || row['turma'] || 
+                                 row['6 Turma'] || row['6 TURMA'] || row['6 turma'] ||
+                                 row['Qual a sua turma?'] || row['QUAL A SUA TURMA?'] || 'Não informada';
+                if (turmaAluno && turmaAluno.trim() && turmaAluno !== 'Não informada') {
+                    const turmaNormalizada = turmaAluno.trim();
+                    processedData.turmas[turmaNormalizada] = (processedData.turmas[turmaNormalizada] || 0) + 1;
+                }
+
+                // Processar frequência nas aulas
+                const freq = row['1a FREQUÊNCIA NAS AULAS SEMANAIS (como está sua frequência nas aulas?)'];
+                if (freq) {
+                    processedData.frequenciaAulas[freq] = (processedData.frequenciaAulas[freq] || 0) + 1;
+                }
+
+                // Processar participação nas aulas
+                const part = row['1b PARTICIPAÇÃO NAS AULAS ( como você avalia seu desempenho escolar?)'];
+                if (part) {
+                    processedData.participacaoAulas[part] = (processedData.participacaoAulas[part] || 0) + 1;
+                }
+
+                // Processar respeito aos colegas
+                const respCol = row['1c RESPEITO AOS COLEGAS DE SALA (como está o seu respeito com os estudantes da sua turma?)'];
+                if (respCol) {
+                    processedData.respeitoColegas[respCol] = (processedData.respeitoColegas[respCol] || 0) + 1;
+                }
+
+                // Processar respeito aos professores
+                const respProf = row['1d RESPEITO AOS PROFESSORES (como está o seu respeito para com os professores?)'];
+                if (respProf) {
+                    processedData.respeitoProfessores[respProf] = (processedData.respeitoProfessores[respProf] || 0) + 1;
+                }
+
+                // Processar avaliação da turma
+                const avalTurma = row['1e SOBRE A SUA TURMA (como você avalia a sua turma)'];
+                if (avalTurma) {
+                    processedData.avaliacaoTurma[avalTurma] = (processedData.avaliacaoTurma[avalTurma] || 0) + 1;
+                }
+
+                // Processar avaliação da escola
+                const avalEscola = row['1f SOBRE A ESCOLA HONÓRIO MIRANDA (como você se sente sendo estudante dessa escola?)'];
+                if (avalEscola) {
+                    processedData.avaliacaoEscola[avalEscola] = (processedData.avaliacaoEscola[avalEscola] || 0) + 1;
+                }
+
+                // Processar disciplinas com nomes corretos
+                const disciplinas = {
+                    '3a': 'ARTE',
+                    '3b': 'BIOLOGIA', 
+                    '3c': 'EDUCAÇÃO FÍSICA',
+                    '3d': 'ESPANHOL',
+                    '3e': 'FILOSOFIA',
+                    '3f': 'FÍSICA',
+                    '3g': 'GEOGRAFIA',
+                    '3h': 'HISTÓRIA',
+                    '3i': 'INGLÊS',
+                    '3j': 'LÍNGUA PORTUGUESA',
+                    '3k': 'MATEMÁTICA',
+                    '3L': 'QUÍMICA',
+                    '3m': 'SOCIOLOGIA'
+                };
+
+                Object.keys(disciplinas).forEach(disc => {
+                    const afinidade = row[`${disc}1 AFINIDADE COM A DISCIPLINA (como você se considera nas aulas desse componente curricular?)`];
+                    const didatica = row[`${disc}2 DIDÁTICA DO PROFESSOR (organização da aula, tira dúvidas, explicação, conhecimento do conteúdo)`];
+                    const frequencia = row[`${disc}3 FREQUÊNCIA DO PROFESSOR (raramente falta ou se atrasa)`];
+                    const devolutiva = row[`${disc}4 DEVOLUTIVA DAS AVALIAÇÕES (postagem das notas no estudante online e entrega das correções dentro de um prazo de 15 dias)`];
+                    
+                    if (afinidade || didatica || frequencia || devolutiva) {
+                        if (!processedData.disciplinas[disc]) {
+                            processedData.disciplinas[disc] = {
+                                nome: disciplinas[disc],
+                                afinidade: {},
+                                didatica: {},
+                                frequencia: {},
+                                devolutiva: {}
+                            };
+                        }
+                        
+                        if (afinidade) {
+                            processedData.disciplinas[disc].afinidade[afinidade] = (processedData.disciplinas[disc].afinidade[afinidade] || 0) + 1;
+                        }
+                        if (didatica) {
+                            processedData.disciplinas[disc].didatica[didatica] = (processedData.disciplinas[disc].didatica[didatica] || 0) + 1;
+                        }
+                        if (frequencia) {
+                            processedData.disciplinas[disc].frequencia[frequencia] = (processedData.disciplinas[disc].frequencia[frequencia] || 0) + 1;
+                        }
+                        if (devolutiva) {
+                            processedData.disciplinas[disc].devolutiva[devolutiva] = (processedData.disciplinas[disc].devolutiva[devolutiva] || 0) + 1;
+                        }
+                    }
+                });
+
+                // Processar segundo professor
+                const inclusao = row['4a1 INCLUSÃO (o segundo professor integra o(s) estudante(s) especiais com a turma)'];
+                const lideranca = row['4a2 LIDERANÇA E PARTICIPAÇÃO ( o segundo professor é participativo nas ações e decisões tomadas pela turma)'];
+                const freqSegundo = row['4a3 FREQUÊNCIA (o segundo professor está sempre acompanhando o(s) seu(s) estudante(s) e raramente falta)'];
+                
+                if (inclusao) {
+                    processedData.segundoProfessor.inclusao[inclusao] = (processedData.segundoProfessor.inclusao[inclusao] || 0) + 1;
+                }
+                if (lideranca) {
+                    processedData.segundoProfessor.lideranca[lideranca] = (processedData.segundoProfessor.lideranca[lideranca] || 0) + 1;
+                }
+                if (freqSegundo) {
+                    processedData.segundoProfessor.frequencia[freqSegundo] = (processedData.segundoProfessor.frequencia[freqSegundo] || 0) + 1;
+                }
+
+                // Processar comentários
+                const sentimentos = row['2a Sinta-se à vontade para escrever como você se sente na sua turma e nessa escola.'];
+                const situacoes = row['5a1 Sinta-se à vontade para escrever como você se sente nas aulas ou conte alguma situação pontual com professor(es).'];
+                
+                if (sentimentos && sentimentos.trim()) {
+                    processedData.comentarios.sentimentos.push(sentimentos.trim());
+                }
+                if (situacoes && situacoes.trim()) {
+                    processedData.comentarios.situacoesProfessores.push(situacoes.trim());
+                }
+            });
+        }
+
+        function generateDashboard() {
+            generateStatsCards();
+            generateCharts();
+            generateInsights();
+            generateComentarios();
+            generateTable();
+            generateReport();
+            setupReportButton();
+            setupTurmaSelector();
+        }
+
+        function generateStatsCards() {
+            const statsGrid = document.getElementById('statsGrid');
+            const totalRespostasValidas = processedData.totalRespostas > 0 ? processedData.totalRespostas : 1;
+
+            const respeitoColegasPositivo = Object.entries(processedData.respeitoColegas)
+                .filter(([key]) => key.toUpperCase().includes('BOM') || key.toUpperCase().includes('ÓTIMO'))
+                .reduce((sum, [, value]) => sum + value, 0);
+            
+            const respeitoProfessoresPositivo = Object.entries(processedData.respeitoProfessores)
+                .filter(([key]) => key.toUpperCase().includes('BOM') || key.toUpperCase().includes('ÓTIMO'))
+                .reduce((sum, [, value]) => sum + value, 0);
+
+            const avaliacoesPositivasEscola = Object.entries(processedData.avaliacaoEscola)
+                .filter(([key]) => key.toUpperCase().includes('BOM') || key.toUpperCase().includes('ÓTIMO'))
+                .reduce((sum, [, value]) => sum + value, 0);
+
+            const avaliacoesPositivasTurma = Object.entries(processedData.avaliacaoTurma)
+                .filter(([key]) => key.toUpperCase().includes('BOM') || key.toUpperCase().includes('ÓTIMO'))
+                .reduce((sum, [, value]) => sum + value, 0);
+
+            const disciplinasAvaliadas = Object.keys(processedData.disciplinas).length;
+
+            const inclusaoOtima = Object.entries(processedData.segundoProfessor.inclusao)
+                .filter(([key]) => key.toUpperCase().includes('ÓTIM'))
+                .reduce((sum, [, value]) => sum + value, 0);
+            
+            // Função para gerar detalhes do hover
+            function generateHoverDetails(data, title) {
+                const total = Object.values(data).reduce((sum, value) => sum + value, 0);
+                
+                let details = `<div class="tooltip-title">${title}</div>`;
+                
+                // Ordenar por quantidade (maior para menor) e limitar a 4 itens principais
+                const sortedEntries = Object.entries(data)
+                    .sort(([,a], [,b]) => b - a)
+                    .slice(0, 4);
+                
+                sortedEntries.forEach(([key, value]) => {
+                    const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                    // Encurtar texto muito longo
+                    const shortKey = key.length > 25 ? key.substring(0, 25) + '...' : key;
+                    details += `
+                        <div class="tooltip-item">
+                            <span class="tooltip-label">${shortKey}</span>
+                            <span class="tooltip-value">${percentage}%</span>
+                        </div>
+                    `;
+                });
+                
+                details += `<div class="tooltip-total">📊 ${total} respostas</div>`;
+                return details;
+            }
+
+            statsGrid.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-number">${processedData.totalRespostas}</div>
+                    <div class="stat-label">Total de Respostas</div>
+                </div>
+                <div class="stat-card hover-card" data-hover="${generateHoverDetails(processedData.respeitoColegas, 'Respeito entre Colegas').replace(/"/g, '&quot;')}">
+                    <div class="stat-number">${Math.round((respeitoColegasPositivo / totalRespostasValidas) * 100)}%</div>
+                    <div class="stat-label">Respeito Positivo entre Colegas</div>
+                    <div class="hover-icon">ℹ️</div>
+                </div>
+                <div class="stat-card hover-card" data-hover="${generateHoverDetails(processedData.respeitoProfessores, 'Respeito aos Professores').replace(/"/g, '&quot;')}">
+                    <div class="stat-number">${Math.round((respeitoProfessoresPositivo / totalRespostasValidas) * 100)}%</div>
+                    <div class="stat-label">Respeito Positivo aos Professores</div>
+                    <div class="hover-icon">ℹ️</div>
+                </div>
+                <div class="stat-card hover-card" data-hover="${generateHoverDetails(processedData.avaliacaoTurma, 'Avaliação da Turma').replace(/"/g, '&quot;')}">
+                    <div class="stat-number">${Math.round((avaliacoesPositivasTurma / totalRespostasValidas) * 100)}%</div>
+                    <div class="stat-label">Avaliação Positiva da Turma</div>
+                    <div class="hover-icon">ℹ️</div>
+                </div>
+                <div class="stat-card hover-card" data-hover="${generateHoverDetails(processedData.avaliacaoEscola, 'Avaliação da Escola').replace(/"/g, '&quot;')}">
+                    <div class="stat-number">${Math.round((avaliacoesPositivasEscola / totalRespostasValidas) * 100)}%</div>
+                    <div class="stat-label">Avaliação Positiva da Escola</div>
+                    <div class="hover-icon">ℹ️</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${disciplinasAvaliadas}</div>
+                    <div class="stat-label">Disciplinas Avaliadas</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${Math.round((inclusaoOtima / totalRespostasValidas) * 100)}%</div>
+                    <div class="stat-label">Excelente Inclusão</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${processedData.comentarios.sentimentos.length + processedData.comentarios.situacoesProfessores.length}</div>
+                    <div class="stat-label">Comentários Analisados</div>
+                </div>
+            `;
+
+            // Adicionar eventos de hover
+            setupHoverCards();
+        }
+
+        function generateCharts() {
+            const chartsGrid = document.getElementById('chartsGrid');
+            chartsGrid.innerHTML = '';
+
+            // Gráfico de Frequência nas Aulas
+            createChart('frequenciaChart', 'Frequência nas Aulas', processedData.frequenciaAulas, 'doughnut');
+            
+            // Gráfico de Participação nas Aulas
+            createChart('participacaoChart', 'Participação nas Aulas', processedData.participacaoAulas, 'bar');
+            
+            // Gráfico de Respeito aos Colegas
+            createChart('respeitoColegasChart', 'Respeito aos Colegas', processedData.respeitoColegas, 'pie');
+            
+            // Gráfico de Avaliação da Escola
+            createChart('avaliacaoEscolaChart', 'Avaliação da Escola', processedData.avaliacaoEscola, 'bar');
+            
+            // Gráficos do Segundo Professor
+            if (Object.keys(processedData.segundoProfessor.inclusao).length > 0) {
+                createChart('inclusaoChart', 'Inclusão - Segundo Professor', processedData.segundoProfessor.inclusao, 'doughnut');
+            }
+            if (Object.keys(processedData.segundoProfessor.lideranca).length > 0) {
+                createChart('liderancaChart', 'Liderança - Segundo Professor', processedData.segundoProfessor.lideranca, 'pie');
+            }
+
+            // Configurar seletor de disciplinas
+            setupDisciplinaSelector();
+        }
+
+        function createChart(id, title, data, type) {
+            const chartsGrid = document.getElementById('chartsGrid');
+            
+            const chartContainer = document.createElement('div');
+            chartContainer.className = 'chart-container';
+            chartContainer.innerHTML = `
+                <h3 class="chart-title">${title}</h3>
+                <div style="position: relative; height: 400px; width: 100%;">
+                    <canvas id="${id}"></canvas>
+                </div>
+            `;
+            chartsGrid.appendChild(chartContainer);
+
+            const ctx = document.getElementById(id).getContext('2d');
+            
+            const labels = Object.keys(data);
+            const values = Object.values(data);
+            const total = values.reduce((sum, value) => sum + value, 0);
+            
+            const colors = [
+                '#1C355E', '#FFA500', '#2F5F9E', '#FFD580',
+                '#CC7000', '#8DA9C4', '#1C355E', '#FFA500',
+                '#2F5F9E', '#FFD580', '#CC7000', '#8DA9C4'
+            ];
+
+            // Determinar se deve ocultar labels do eixo X
+            const hideXLabels = title.includes('Participação nas Aulas') || title.includes('Avaliação da Escola');
+
+            new Chart(ctx, {
+                type: type,
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: colors.slice(0, labels.length),
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                usePointStyle: true,
+                                font: {
+                                    size: 12
+                                },
+                                // Ocultar legenda para gráficos específicos
+                                filter: function(legendItem, chartData) {
+                                    if (hideXLabels) {
+                                        return false;
+                                    }
+                                    return true;
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: '#1C355E',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            displayColors: true,
+                            callbacks: {
+                                label: function(context) {
+                                    // Obter valor correto dependendo do tipo de gráfico
+                                    const value = type === 'bar' ? context.parsed.y : (context.parsed || context.raw);
+                                    const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                                    
+                                    // Encurtar texto longo nos tooltips
+                                    let label = context.label;
+                                    if (label && label.length > 40) {
+                                        label = label.substring(0, 40) + '...';
+                                    }
+                                    return `${label}: ${value} respostas (${percentage}%)`;
+                                },
+                                afterLabel: function(context) {
+                                    return `Total: ${total} respostas`;
+                                }
+                            }
+                        }
+                    },
+                    scales: type === 'bar' ? {
+                        x: {
+                            display: !hideXLabels,
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 0,
+                                callback: function(value, index, values) {
+                                    const label = this.getLabelForValue(value);
+                                    // Limitar tamanho do texto no eixo X
+                                    return label.length > 20 ? label.substring(0, 20) + '...' : label;
+                                }
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    } : {}
+                }
+            });
+        }
+
+        function setupDisciplinaSelector() {
+            const select = document.getElementById('disciplinaSelect');
+            const chartsContainer = document.getElementById('disciplinaCharts');
+            
+            // Limpar opções existentes
+            select.innerHTML = '<option value="">-- Escolha uma disciplina --</option>';
+            
+            // Adicionar opções das disciplinas
+            Object.keys(processedData.disciplinas).forEach(disc => {
+                const disciplina = processedData.disciplinas[disc];
+                const option = document.createElement('option');
+                option.value = disc;
+                option.textContent = disciplina.nome;
+                select.appendChild(option);
+            });
+            
+            // Adicionar evento de mudança
+            select.addEventListener('change', function() {
+                currentFilter.disciplina = this.value;
+                updateFilterInfo();
+                
+                if (this.value) {
+                    showDisciplinaCharts(this.value);
+                    chartsContainer.style.display = 'block';
+                } else {
+                    chartsContainer.style.display = 'none';
+                }
+            });
+        }
+
+        function setupTurmaSelector() {
+            const select = document.getElementById('turmaSelect');
+            
+            // Limpar opções existentes
+            select.innerHTML = '<option value="">-- Todas as Turmas --</option>';
+            
+            // Coletar todas as turmas dos dados originais - buscar em diferentes possíveis nomes de coluna
+            const turmasDisponiveis = {};
+            csvData.forEach(row => {
+                const turmaAluno = row['Turma'] || row['TURMA'] || row['turma'] || 
+                                 row['6 Turma'] || row['6 TURMA'] || row['6 turma'] ||
+                                 row['Qual a sua turma?'] || row['QUAL A SUA TURMA?'] || '';
+                if (turmaAluno && turmaAluno.trim()) {
+                    const turmaNormalizada = turmaAluno.trim();
+                    turmasDisponiveis[turmaNormalizada] = (turmasDisponiveis[turmaNormalizada] || 0) + 1;
+                }
+            });
+            
+            console.log('📚 Turmas encontradas:', turmasDisponiveis);
+            
+            // Adicionar opções das turmas (ordenadas)
+            Object.keys(turmasDisponiveis)
+                .sort()
+                .forEach(turma => {
+                    const option = document.createElement('option');
+                    option.value = turma;
+                    option.textContent = `${turma} (${turmasDisponiveis[turma]} estudantes)`;
+                    select.appendChild(option);
+                });
+            
+            // Adicionar evento de mudança
+            select.addEventListener('change', function() {
+                currentFilter.turma = this.value;
+                console.log('🎯 Filtro de turma alterado para:', this.value || 'Todas as turmas');
+                
+                // Reprocessar dados com o filtro
+                processData(this.value);
+                
+                // Regenerar COMPLETAMENTE o dashboard com os dados filtrados
+                generateStatsCards();
+                generateCharts();
+                generateInsights();
+                generateComentarios();
+                generateTable();
+                generateReport();
+                
+                // Reconfigurar seletor de disciplinas com dados filtrados
+                setupDisciplinaSelector();
+                
+                // Atualizar informações do filtro
+                updateFilterInfo();
+                
+                console.log('✅ Dashboard regenerado com filtro de turma aplicado');
+            });
+        }
+
+        function updateFilterInfo() {
+            const filtroInfo = document.getElementById('filtroInfo');
+            const filtroTexto = document.getElementById('filtroTexto');
+            
+            let textoFiltro = '';
+            const filtros = [];
+            
+            if (currentFilter.turma) {
+                filtros.push(`Turma: ${currentFilter.turma}`);
+            }
+            
+            if (currentFilter.disciplina) {
+                const disciplinaNome = processedData.disciplinas[currentFilter.disciplina]?.nome || currentFilter.disciplina;
+                filtros.push(`Disciplina: ${disciplinaNome}`);
+            }
+            
+            if (filtros.length > 0) {
+                textoFiltro = `📊 Visualizando dados filtrados por: ${filtros.join(' | ')}`;
+                filtroInfo.style.display = 'block';
+            } else {
+                textoFiltro = '📊 Visualizando todos os dados';
+                filtroInfo.style.display = 'none';
+            }
+            
+            filtroTexto.textContent = textoFiltro;
+        }
+
+        function showDisciplinaCharts(discKey) {
+            const disciplina = processedData.disciplinas[discKey];
+            const chartsGrid = document.getElementById('disciplinaChartsGrid');
+            
+            // Limpar gráficos anteriores
+            chartsGrid.innerHTML = '';
+            
+            // Criar gráficos para a disciplina selecionada
+            if (Object.keys(disciplina.afinidade).length > 0) {
+                createDisciplinaChart(`afinidade${discKey}Chart`, `${disciplina.nome} - Afinidade dos Estudantes`, disciplina.afinidade, 'bar');
+            }
+            
+            if (Object.keys(disciplina.didatica).length > 0) {
+                createDisciplinaChart(`didatica${discKey}Chart`, `${disciplina.nome} - Didática do Professor`, disciplina.didatica, 'doughnut');
+            }
+            
+            if (Object.keys(disciplina.frequencia).length > 0) {
+                createDisciplinaChart(`frequencia${discKey}Chart`, `${disciplina.nome} - Frequência do Professor`, disciplina.frequencia, 'pie');
+            }
+            
+            if (Object.keys(disciplina.devolutiva).length > 0) {
+                createDisciplinaChart(`devolutiva${discKey}Chart`, `${disciplina.nome} - Devolutiva das Avaliações`, disciplina.devolutiva, 'bar');
+            }
+            
+            // Adicionar insights específicos da disciplina
+            addDisciplinaInsights(disciplina);
+        }
+
+        function createDisciplinaChart(id, title, data, type) {
+            const chartsGrid = document.getElementById('disciplinaChartsGrid');
+            
+            const chartContainer = document.createElement('div');
+            chartContainer.className = 'chart-container';
+            chartContainer.innerHTML = `
+                <h3 class="chart-title">${title}</h3>
+                <div style="position: relative; height: 400px; width: 100%;">
+                    <canvas id="${id}"></canvas>
+                </div>
+            `;
+            chartsGrid.appendChild(chartContainer);
+
+            const ctx = document.getElementById(id).getContext('2d');
+            
+            const labels = Object.keys(data);
+            const values = Object.values(data);
+            const total = values.reduce((sum, value) => sum + value, 0);
+            
+            const colors = [
+                '#1C355E', '#FFA500', '#2F5F9E', '#FFD580',
+                '#CC7000', '#8DA9C4', '#1C355E', '#FFA500',
+                '#2F5F9E', '#FFD580', '#CC7000', '#8DA9C4'
+            ];
+
+            new Chart(ctx, {
+                type: type,
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: colors.slice(0, labels.length),
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                usePointStyle: true,
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: '#1C355E',
+                            borderWidth: 2,
+                            cornerRadius: 10,
+                            displayColors: true,
+                            titleFont: {
+                                size: 14,
+                                weight: 'bold'
+                            },
+                            bodyFont: {
+                                size: 13
+                            },
+                            padding: 12,
+                            callbacks: {
+                                title: function(context) {
+                                    // Encurtar título se muito longo
+                                    let title = context[0].label || 'Sem rótulo';
+                                    if (title.length > 30) {
+                                        title = title.substring(0, 30) + '...';
+                                    }
+                                    return title;
+                                },
+                                label: function(context) {
+                                    // Obter valor correto dependendo do tipo de gráfico
+                                    const value = type === 'bar' ? context.parsed.y : (context.parsed || context.raw);
+                                    const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                                    
+                                    return `📊 ${value} respostas (${percentage}%)`;
+                                },
+                                afterLabel: function(context) {
+                                    return `📈 Total geral: ${total} respostas`;
+                                }
+                            }
+                        }
+                    },
+                    scales: type === 'bar' ? {
+                        x: {
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 0,
+                                callback: function(value, index, values) {
+                                    const label = this.getLabelForValue(value);
+                                    // Limitar tamanho do texto no eixo X
+                                    return label.length > 20 ? label.substring(0, 20) + '...' : label;
+                                }
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    } : {}
+                }
+            });
+        }
+
+        function addDisciplinaInsights(disciplina) {
+            const chartsGrid = document.getElementById('disciplinaChartsGrid');
+            
+            // Calcular estatísticas da disciplina
+            const totalAfinidade = Object.values(disciplina.afinidade).reduce((sum, value) => sum + value, 0) || 1;
+            const afinidadePositiva = Object.entries(disciplina.afinidade)
+                .filter(([key]) => key.toUpperCase().includes('ÓTIM') || key.toUpperCase().includes('BOM'))
+                .reduce((sum, [, value]) => sum + value, 0);
+            
+            const totalDidatica = Object.values(disciplina.didatica).reduce((sum, value) => sum + value, 0) || 1;
+            const didaticaPositiva = Object.entries(disciplina.didatica)
+                .filter(([key]) => key.toUpperCase().includes('ÓTIM') || key.toUpperCase().includes('BOM'))
+                .reduce((sum, [, value]) => sum + value, 0);
+            
+            const totalFrequencia = Object.values(disciplina.frequencia).reduce((sum, value) => sum + value, 0) || 1;
+            const frequenciaPositiva = Object.entries(disciplina.frequencia)
+                .filter(([key]) => key.toUpperCase().includes('ÓTIM') || key.toUpperCase().includes('BOM'))
+                .reduce((sum, [, value]) => sum + value, 0);
+            
+            // Função para gerar detalhes do hover para disciplinas
+            function generateDisciplinaHoverDetails(data, title) {
+                const total = Object.values(data).reduce((sum, value) => sum + value, 0);
+                
+                let details = `<div class="tooltip-title">${title}</div>`;
+                
+                // Ordenar por quantidade (maior para menor)
+                const sortedEntries = Object.entries(data)
+                    .sort(([,a], [,b]) => b - a);
+                
+                sortedEntries.forEach(([key, value]) => {
+                    const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                    // Encurtar texto muito longo
+                    const shortKey = key.length > 25 ? key.substring(0, 25) + '...' : key;
+                    details += `
+                        <div class="tooltip-item">
+                            <span class="tooltip-label">${shortKey}</span>
+                            <span class="tooltip-value">${value} (${percentage}%)</span>
+                        </div>
+                    `;
+                });
+                
+                details += `<div class="tooltip-total">📊 ${total} respostas</div>`;
+                return details;
+            }
+            
+            const insightsContainer = document.createElement('div');
+            insightsContainer.className = 'chart-container';
+            insightsContainer.innerHTML = `
+                <h3 class="chart-title">📊 Análise Detalhada - ${disciplina.nome}</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 20px;">
+                    <div class="hover-card stat-card" data-hover="${generateDisciplinaHoverDetails(disciplina.afinidade, `${disciplina.nome} - Afinidade dos Estudantes`).replace(/"/g, '&quot;')}">
+                        <div class="stat-number" style="color: #1C355E;">${Math.round((afinidadePositiva / totalAfinidade) * 100)}%</div>
+                        <div class="stat-label">Afinidade Positiva</div>
+                        <div class="hover-icon">ℹ️</div>
+                    </div>
+                    <div class="hover-card stat-card" data-hover="${generateDisciplinaHoverDetails(disciplina.didatica, `${disciplina.nome} - Didática do Professor`).replace(/"/g, '&quot;')}">
+                        <div class="stat-number" style="color: #2F5F9E;">${Math.round((didaticaPositiva / totalDidatica) * 100)}%</div>
+                        <div class="stat-label">Didática Aprovada</div>
+                        <div class="hover-icon">ℹ️</div>
+                    </div>
+                    <div class="hover-card stat-card" data-hover="${generateDisciplinaHoverDetails(disciplina.frequencia, `${disciplina.nome} - Frequência do Professor`).replace(/"/g, '&quot;')}">
+                        <div class="stat-number" style="color: #6A5ACD;">${Math.round((frequenciaPositiva / totalFrequencia) * 100)}%</div>
+                        <div class="stat-label">Frequência Adequada</div>
+                        <div class="hover-icon">ℹ️</div>
+                    </div>
+                </div>
+                <div style="margin-top: 20px; padding: 15px; background: linear-gradient(135deg, #f8faff 0%, #e8f2ff 100%); border-radius: 8px; border-left: 4px solid #1e3c72;">
+                    <h4 style="color: #1e3c72; margin-bottom: 10px;">💡 Insights da Disciplina</h4>
+                    <p style="margin: 0; color: #333;">
+                        ${disciplina.nome} apresenta ${Math.round((afinidadePositiva / totalAfinidade) * 100)}% de afinidade positiva dos estudantes (${afinidadePositiva}/${totalAfinidade} respostas). 
+                        A didática do professor é aprovada por ${Math.round((didaticaPositiva / totalDidatica) * 100)}% dos alunos (${didaticaPositiva}/${totalDidatica} respostas), 
+                        e ${Math.round((frequenciaPositiva / totalFrequencia) * 100)}% consideram a frequência adequada (${frequenciaPositiva}/${totalFrequencia} respostas).
+                    </p>
+                </div>
+            `;
+            chartsGrid.appendChild(insightsContainer);
+            
+            // Reconfigurar eventos de hover para os novos cartões
+            setupHoverCards();
+        }
+
+        function generateComentarios() {
+            const container = document.getElementById('comentariosContainer');
+            container.innerHTML = '';
+
+            const allComments = [
+                ...processedData.comentarios.sentimentos,
+                ...processedData.comentarios.situacoesProfessores
+            ];
+
+            if (allComments.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #666;">Nenhum comentário disponível para o filtro selecionado.</p>';
+                return;
+            }
+
+            // --- Função de Análise Qualitativa ---
+            function analyzeComments(comments) {
+                const analysis = {
+                    positive: [],
+                    negative: [],
+                    suggestion: [],
+                    neutral: [],
+                    themes: {}
+                };
+
+                const keywords = {
+                    positive: ['gosto', 'adoro', 'bom', 'ótimo', 'excelente', 'parabéns', 'acolhedor', 'legal', 'amo', 'elogiar', 'gostei'],
+                    negative: ['ruim', 'odeio', 'chato', 'difícil', 'problema', 'conversa', 'barulho', 'reclama', 'não gosto', 'melhorar', 'falta'],
+                    suggestion: ['poderia', 'sugiro', 'devia', 'precisa']
+                };
+
+                const themeKeywords = {
+                    'Professores': ['professor', 'professora', 'prof', 'docente', 'ensina', 'explica'],
+                    'Colegas e Turma': ['colega', 'amigo', 'turma', 'pessoal', 'gente', 'bagunça', 'conversa'],
+                    'Aulas e Conteúdo': ['aula', 'matéria', 'disciplina', 'conteúdo', 'atividade', 'prova'],
+                    'Escola e Estrutura': ['escola', 'direção', 'estrutura', 'regras', 'ambiente']
+                };
+
+                comments.forEach(comment => {
+                    const lowerComment = comment.toLowerCase();
+                    let isCategorized = false;
+
+                    if (keywords.suggestion.some(kw => lowerComment.includes(kw))) {
+                        analysis.suggestion.push(comment);
+                        isCategorized = true;
+                    } else if (keywords.positive.some(kw => lowerComment.includes(kw))) {
+                        analysis.positive.push(comment);
+                        isCategorized = true;
+                    } else if (keywords.negative.some(kw => lowerComment.includes(kw))) {
+                        analysis.negative.push(comment);
+                        isCategorized = true;
+                    }
+
+                    if (!isCategorized) {
+                        analysis.neutral.push(comment);
+                    }
+
+                    Object.keys(themeKeywords).forEach(theme => {
+                        if (themeKeywords[theme].some(kw => lowerComment.includes(kw))) {
+                            analysis.themes[theme] = (analysis.themes[theme] || 0) + 1;
+                        }
+                    });
+                });
+                return analysis;
+            }
+            // --- Fim da Função de Análise ---
+
+            const analysisResult = analyzeComments(allComments);
+
+            let html = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; text-align: center;">
+                    <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; border-left: 4px solid #28a745;">
+                        <h4 style="color: #155724;">Positivos</h4>
+                        <p style="font-size: 1.5rem; font-weight: bold; color: #155724;">${analysisResult.positive.length}</p>
+                    </div>
+                    <div style="background: #f8d7da; padding: 15px; border-radius: 8px; border-left: 4px solid #dc3545;">
+                        <h4 style="color: #721c24;">Negativos</h4>
+                        <p style="font-size: 1.5rem; font-weight: bold; color: #721c24;">${analysisResult.negative.length}</p>
+                    </div>
+                    <div style="background: #d1ecf1; padding: 15px; border-radius: 8px; border-left: 4px solid #17a2b8;">
+                        <h4 style="color: #0c5460;">Sugestões</h4>
+                        <p style="font-size: 1.5rem; font-weight: bold; color: #0c5460;">${analysisResult.suggestion.length}</p>
+                    </div>
+                </div>
+            `;
+            
+            const sortedThemes = Object.entries(analysisResult.themes).sort(([, a], [, b]) => b - a);
+
+            if (sortedThemes.length > 0) {
+                html += `
+                    <div class="insight-item">
+                        <h4>Principais Temas Mencionados</h4>
+                        <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                            ${sortedThemes.map(([theme, count]) => `<span style="background: #1C355E; color: white; padding: 5px 12px; border-radius: 15px; font-size: 0.9rem;">${theme} (${count})</span>`).join('')}
+                        </div>
+                    </div>`;
+            }
+
+            function createCommentSection(title, comments, color) {
+                if (comments.length === 0) return '';
+                let sectionHtml = `
+                    <div class="insight-item" style="border-left-color: ${color};">
+                        <h4 style="color: ${color};">${title} (Amostra de ${Math.min(3, comments.length)})</h4>
+                        <div style="max-height: 200px; overflow-y: auto; padding-right: 10px;">`;
+                
+                comments.slice(0, 3).forEach(comment => {
+                    sectionHtml += `<p style="margin-bottom: 10px; padding: 10px; background: #f0f4f8; border-radius: 5px; border-left: 3px solid ${color};"><em>"${comment}"</em></p>`;
+                });
+
+                if (comments.length > 3) {
+                    sectionHtml += `<p style="text-align: center; color: #666; margin-top: 10px;">... e mais ${comments.length - 3} comentários</p>`;
+                }
+                sectionHtml += '</div></div>';
+                return sectionHtml;
+            }
+
+            html += createCommentSection('👍 Comentários Positivos', analysisResult.positive, '#28a745');
+            html += createCommentSection('👎 Comentários de Pontos de Melhoria', analysisResult.negative, '#dc3545');
+            html += createCommentSection('💡 Sugestões dos Estudantes', analysisResult.suggestion, '#17a2b8');
+            
+            container.innerHTML = html;
+        }
+
+        function generateInsights() {
+            const container = document.getElementById('insightsContainer');
+            const filtroAtivo = processedData.filtroAtivo;
+            const totalRespostasValidas = processedData.totalRespostas > 0 ? processedData.totalRespostas : 1;
+
+            // Calcular insights
+            const frequenciaProblemas = Object.entries(processedData.frequenciaAulas)
+                .filter(([key]) => key.toLowerCase().includes('falto'))
+                .reduce((sum, [, value]) => sum + value, 0);
+            
+            const participacaoExcelente = Object.entries(processedData.participacaoAulas)
+                .filter(([key]) => key.toLowerCase().includes('ótimo') || key.toLowerCase().includes('excelente'))
+                .reduce((sum, [, value]) => sum + value, 0);
+
+            const turmaRegular = Object.entries(processedData.avaliacaoTurma)
+                .filter(([key]) => key.toLowerCase().includes('regular'))
+                .reduce((sum, [, value]) => sum + value, 0);
+
+            const inclusaoOtima = Object.entries(processedData.segundoProfessor.inclusao)
+                .filter(([key]) => key.toUpperCase().includes('ÓTIM'))
+                .reduce((sum, [, value]) => sum + value, 0);
+            
+            // Calcular disciplina com melhor avaliação
+            let melhorDisciplina = 'N/A';
+            let melhorPercentual = 0;
+            Object.keys(processedData.disciplinas).forEach(disc => {
+                const disciplina = processedData.disciplinas[disc];
+                const total = Object.values(disciplina.afinidade).reduce((sum, value) => sum + value, 0);
+                if (total > 0) {
+                    const positivas = Object.entries(disciplina.afinidade)
+                        .filter(([key]) => key.toUpperCase().includes('ÓTIM') || key.toUpperCase().includes('BOM'))
+                        .reduce((sum, [, value]) => sum + value, 0);
+                    const percentual = (positivas / total) * 100;
+                    
+                    if (percentual > melhorPercentual) {
+                        melhorPercentual = percentual;
+                        melhorDisciplina = disciplina.nome;
+                    }
+                }
+            });
+
+            let headerText = filtroAtivo 
+                ? `<h3 style="color: #1C355E; margin-bottom: 20px; text-align:center; font-size: 1.3rem;">Insights para a Turma: ${filtroAtivo}</h3>` 
+                : '';
+
+            container.innerHTML = headerText + `
+                <div class="insight-item">
+                    <h4>🎯 Frequência Escolar</h4>
+                    <p>${Math.round((frequenciaProblemas / totalRespostasValidas) * 100)}% dos estudantes relatam faltar às aulas. Recomenda-se investigar os motivos e criar estratégias de engajamento.</p>
+                </div>
+                <div class="insight-item">
+                    <h4>📚 Participação nas Aulas</h4>
+                    <p>${Math.round((participacaoExcelente / totalRespostasValidas) * 100)}% dos estudantes demonstram excelente participação, um ponto forte a ser mantido.</p>
+                </div>
+                <div class="insight-item">
+                    <h4>👥 Ambiente da Turma</h4>
+                    <p>${Math.round((turmaRegular / totalRespostasValidas) * 100)}% avaliam a turma como "regular", frequentemente citando conversas paralelas como um desafio.</p>
+                </div>
+                <div class="insight-item">
+                    <h4>🤝 Trabalho de Inclusão</h4>
+                    <p>${Math.round((inclusaoOtima / totalRespostasValidas) * 100)}% avaliam como "ótima" a inclusão realizada pelo segundo professor, um indicador de excelência no apoio especializado.</p>
+                </div>
+                <div class="insight-item">
+                    <h4>🏆 Disciplina Destaque</h4>
+                    <p>No filtro atual, <strong>${melhorDisciplina}</strong> se destaca com aproximadamente <strong>${Math.round(melhorPercentual)}%</strong> de avaliação positiva, sendo um referencial de boas práticas.</p>
+                </div>
+            `;
+        }
+
+        function generateTable() {
+            const container = document.getElementById('tableContainer');
+            
+            let tableHTML = `
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Aspecto Avaliado</th>
+                            <th>Respostas Positivas (Ótimo/Bom)</th>
+                            <th>Respostas Neutras (Regular)</th>
+                            <th>Pontos de Melhoria</th>
+                            <th>% Satisfação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            const aspects = [
+                { name: 'Respeito aos Colegas', data: processedData.respeitoColegas },
+                { name: 'Respeito aos Professores', data: processedData.respeitoProfessores },
+                { name: 'Avaliação da Turma', data: processedData.avaliacaoTurma },
+                { name: 'Avaliação da Escola', data: processedData.avaliacaoEscola },
+                { name: 'Inclusão - 2º Professor', data: processedData.segundoProfessor.inclusao },
+                { name: 'Liderança - 2º Professor', data: processedData.segundoProfessor.lideranca }
+            ];
+
+            aspects.forEach(aspect => {
+                const positive = Object.entries(aspect.data)
+                    .filter(([key]) => key.toUpperCase().includes('BOM') || key.toUpperCase().includes('ÓTIMO'))
+                    .reduce((sum, [, value]) => sum + value, 0);
+                
+                const neutral = Object.entries(aspect.data)
+                    .filter(([key]) => key.toUpperCase().includes('REGULAR'))
+                    .reduce((sum, [, value]) => sum + value, 0);
+                
+                const total = Object.values(aspect.data).reduce((s, v) => s + v, 0);
+                const negative = total - positive - neutral;
+
+                const satisfaction = total > 0 ? Math.round((positive / total) * 100) : 0;
+
+                tableHTML += `
+                    <tr>
+                        <td>${aspect.name}</td>
+                        <td>${positive}</td>
+                        <td>${neutral}</td>
+                        <td>${negative}</td>
+                        <td>${satisfaction}%</td>
+                    </tr>
+                `;
+            });
+
+            tableHTML += '</tbody></table>';
+            container.innerHTML = tableHTML;
+        }
+
+        function generateReport() {
+            const container = document.getElementById('reportContent');
+            
+            const today = new Date().toLocaleDateString('pt-BR');
+            const totalRespostasValidas = processedData.totalRespostas > 0 ? processedData.totalRespostas : 1;
+            
+            const respeitoColegasPositivo = Object.entries(processedData.respeitoColegas)
+                .filter(([key]) => key.toUpperCase().includes('BOM') || key.toUpperCase().includes('ÓTIMO'))
+                .reduce((sum, [, value]) => sum + value, 0);
+            
+            const respeitoProfessoresPositivo = Object.entries(processedData.respeitoProfessores)
+                .filter(([key]) => key.toUpperCase().includes('BOM') || key.toUpperCase().includes('ÓTIMO'))
+                .reduce((sum, [, value]) => sum + value, 0);
+
+            const avaliacoesPositivasEscola = Object.entries(processedData.avaliacaoEscola)
+                .filter(([key]) => key.toUpperCase().includes('BOM') || key.toUpperCase().includes('ÓTIMO'))
+                .reduce((sum, [, value]) => sum + value, 0);
+
+            const inclusaoOtima = Object.entries(processedData.segundoProfessor.inclusao)
+                .filter(([key]) => key.toUpperCase().includes('ÓTIM'))
+                .reduce((sum, [, value]) => sum + value, 0);
+            
+            container.innerHTML = `
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <h3 style="color: #1C355E; font-size: 1.8rem; margin-bottom: 10px;">📋 Relatório Executivo</h3>
+                    <p style="color: #666; font-size: 1rem; margin: 0;">${today}</p>
+                </div>
+                
+                <div style="background: linear-gradient(135deg, #f8faff 0%, #e8f2ff 100%); padding: 25px; border-radius: 15px; margin-bottom: 30px; border-left: 5px solid #1C355E;">
+                    <h4 style="color: #1C355E; margin-bottom: 15px; font-size: 1.3rem;">📊 Resumo Executivo</h4>
+                    <p style="line-height: 1.8; font-size: 1.05rem; margin: 0; text-align: justify;">
+                        Esta pesquisa coletou <strong style="color: #1C355E;">${processedData.totalRespostas} respostas</strong>, 
+                        avaliando diversos aspectos do ambiente escolar, desempenho acadêmico e trabalho de inclusão. Os dados revelam um panorama 
+                        abrangente das percepções estudantis sobre <strong style="color: #1C355E;">${Object.keys(processedData.disciplinas).length} disciplinas</strong> 
+                        e <strong style="color: #1C355E;">${processedData.comentarios.sentimentos.length + processedData.comentarios.situacoesProfessores.length} comentários qualitativos</strong>.
+                    </p>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px;">
+                    <div style="background: #e8f5e8; padding: 20px; border-radius: 12px; text-align: center; border-left: 4px solid #28a745;">
+                        <div style="font-size: 2.2rem; font-weight: bold; color: #28a745; margin-bottom: 8px;">
+                            ${Math.round((respeitoColegasPositivo / totalRespostasValidas) * 100)}%
+                        </div>
+                        <div style="font-size: 0.95rem; color: #666; font-weight: 600;">Respeito entre Colegas</div>
+                    </div>
+                    <div style="background: #e8f5e8; padding: 20px; border-radius: 12px; text-align: center; border-left: 4px solid #28a745;">
+                        <div style="font-size: 2.2rem; font-weight: bold; color: #28a745; margin-bottom: 8px;">
+                            ${Math.round((respeitoProfessoresPositivo / totalRespostasValidas) * 100)}%
+                        </div>
+                        <div style="font-size: 0.95rem; color: #666; font-weight: 600;">Respeito aos Professores</div>
+                    </div>
+                    <div style="background: #e8f5e8; padding: 20px; border-radius: 12px; text-align: center; border-left: 4px solid #28a745;">
+                        <div style="font-size: 2.2rem; font-weight: bold; color: #28a745; margin-bottom: 8px;">
+                            ${Math.round((avaliacoesPositivasEscola / totalRespostasValidas) * 100)}%
+                        </div>
+                        <div style="font-size: 0.95rem; color: #666; font-weight: 600;">Satisfação com a Escola</div>
+                    </div>
+                    <div style="background: #d1ecf1; padding: 20px; border-radius: 12px; text-align: center; border-left: 4px solid #17a2b8;">
+                        <div style="font-size: 2.2rem; font-weight: bold; color: #0c5460; margin-bottom: 8px;">
+                            ${Math.round((inclusaoOtima / totalRespostasValidas) * 100)}%
+                        </div>
+                        <div style="font-size: 0.95rem; color: #666; font-weight: 600;">Excelente Inclusão</div>
+                    </div>
+                </div>
+                
+                <div style="background: white; padding: 25px; border-radius: 15px; margin-bottom: 25px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); border-left: 5px solid #2F5F9E;">
+                    <h4 style="color: #2F5F9E; margin-bottom: 20px; font-size: 1.3rem; display: flex; align-items: center; gap: 10px;">
+                        🎯 Principais Descobertas
+                    </h4>
+                    <div style="display: grid; gap: 15px;">
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 3px solid #28a745;">
+                            <strong style="color: #28a745;">✅ Relacionamento Interpessoal:</strong>
+                            <p style="margin: 8px 0 0 0; line-height: 1.6;">Alto nível de respeito entre colegas e professores, criando ambiente escolar saudável.</p>
+                        </div>
+                        <div style="background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 3px solid #ffc107;">
+                            <strong style="color: #856404;">⚠️ Frequência e Concentração:</strong>
+                            <p style="margin: 8px 0 0 0; line-height: 1.6;">Necessidade de atenção para reduzir faltas e melhorar a concentração em sala, com relatos de conversas paralelas.</p>
+                        </div>
+                        <div style="background: #d1ecf1; padding: 15px; border-radius: 8px; border-left: 3px solid #17a2b8;">
+                            <strong style="color: #0c5460;">🤝 Trabalho de Inclusão:</strong>
+                            <p style="margin: 8px 0 0 0; line-height: 1.6;">Excelente avaliação do segundo professor no apoio especializado, demonstrando efetividade e integração.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="background: white; padding: 25px; border-radius: 15px; margin-bottom: 25px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); border-left: 5px solid #6A5ACD;">
+                    <h4 style="color: #6A5ACD; margin-bottom: 20px; font-size: 1.3rem; display: flex; align-items: center; gap: 10px;">
+                        💡 Recomendações Estratégicas
+                    </h4>
+                    <div style="display: grid; gap: 12px;">
+                        <div style="display: flex; align-items: flex-start; gap: 12px; padding: 12px; background: #f8f9fa; border-radius: 8px;">
+                            <span style="background: #6A5ACD; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold; flex-shrink: 0;">1</span>
+                            <div>
+                                <strong style="color: #6A5ACD;">Foco na Sala de Aula</strong>
+                                <p style="margin: 4px 0 0 0; line-height: 1.5; color: #666;">Implementar dinâmicas e acordos de convivência para melhorar a concentração e a frequência.</p>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: flex-start; gap: 12px; padding: 12px; background: #f8f9fa; border-radius: 8px;">
+                            <span style="background: #6A5ACD; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold; flex-shrink: 0;">2</span>
+                            <div>
+                                <strong style="color: #6A5ACD;">Reconhecer Boas Práticas</strong>
+                                <p style="margin: 4px 0 0 0; line-height: 1.5; color: #666;">Valorizar e replicar as estratégias de professores e disciplinas bem avaliadas.</p>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: flex-start; gap: 12px; padding: 12px; background: #f8f9fa; border-radius: 8px;">
+                           <span style="background: #6A5ACD; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold; flex-shrink: 0;">3</span>
+                            <div>
+                                <strong style="color: #6A5ACD;">Monitoramento Contínuo</strong>
+                                <p style="margin: 4px 0 0 0; line-height: 1.5; color: #666;">Utilizar esta ferramenta para acompanhamento trimestral, ajustando as estratégias conforme a evolução dos dados.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function setupReportButton() {
+            const button = document.getElementById('generateReportBtn');
+            button.addEventListener('click', function() {
+                generateCompleteReport();
+            });
+        }
+
+        function generateCompleteReport() {
+            // Obter informações do cabeçalho
+            const unidadeEscolar = document.getElementById('unidadeEscolar').textContent;
+            const turmasAvaliadas = document.getElementById('turmasAvaliadas').textContent;
+            const periodoAplicacao = document.getElementById('periodoAplicacao').textContent;
+            
+            // Calcular estatísticas principais
+            const totalRespostasValidas = processedData.totalRespostas;
+            
+            const bonsRespeitoColegas = Object.entries(processedData.respeitoColegas)
+                .filter(([key]) => key.toUpperCase().includes('BOM'))
+                .reduce((sum, [, value]) => sum + value, 0);
+            
+            const bonsRespeitoProfessores = Object.entries(processedData.respeitoProfessores)
+                .filter(([key]) => key.toUpperCase().includes('BOM'))
+                .reduce((sum, [, value]) => sum + value, 0);
+
+            const avaliacoesPositivasEscola = Object.entries(processedData.avaliacaoEscola)
+                .filter(([key]) => key.toUpperCase().includes('BOM'))
+                .reduce((sum, [, value]) => sum + value, 0);
+
+            const avaliacoesPositivasTurma = Object.entries(processedData.avaliacaoTurma)
+                .filter(([key]) => key.toUpperCase().includes('BOM'))
+                .reduce((sum, [, value]) => sum + value, 0);
+
+            const inclusaoOtima = Object.entries(processedData.segundoProfessor.inclusao)
+                .filter(([key]) => key.toUpperCase().includes('ÓTIM'))
+                .reduce((sum, [, value]) => sum + value, 0);
+
+            // Calcular disciplina com melhor avaliação
+            let melhorDisciplina = '';
+            let melhorPercentual = 0;
+            Object.keys(processedData.disciplinas).forEach(disc => {
+                const disciplina = processedData.disciplinas[disc];
+                const positivas = Object.entries(disciplina.afinidade)
+                    .filter(([key]) => key.toUpperCase().includes('ÓTIM') || key.toUpperCase().includes('BOM'))
+                    .reduce((sum, [, value]) => sum + value, 0);
+                const total = Object.values(disciplina.afinidade).reduce((sum, value) => sum + value, 0);
+                const percentual = total > 0 ? (positivas / total) * 100 : 0;
+                
+                if (percentual > melhorPercentual) {
+                    melhorPercentual = percentual;
+                    melhorDisciplina = disciplina.nome;
+                }
+            });
+
+            // Gerar tabela de aspectos avaliados
+            const aspects = [
+                { name: 'Respeito aos Colegas', data: processedData.respeitoColegas },
+                { name: 'Respeito aos Professores', data: processedData.respeitoProfessores },
+                { name: 'Avaliação da Turma', data: processedData.avaliacaoTurma },
+                { name: 'Avaliação da Escola', data: processedData.avaliacaoEscola },
+                { name: 'Inclusão - 2º Professor', data: processedData.segundoProfessor.inclusao },
+                { name: 'Liderança - 2º Professor', data: processedData.segundoProfessor.lideranca }
+            ];
+
+            let tableRows = '';
+            aspects.forEach(aspect => {
+                const positive = Object.entries(aspect.data)
+                    .filter(([key]) => key.toUpperCase().includes('BOM') || key.toUpperCase().includes('ÓTIMO'))
+                    .reduce((sum, [, value]) => sum + value, 0);
+                
+                const neutral = Object.entries(aspect.data)
+                    .filter(([key]) => key.toUpperCase().includes('REGULAR'))
+                    .reduce((sum, [, value]) => sum + value, 0);
+                
+                const negative = Object.entries(aspect.data)
+                    .filter(([key]) => !key.toUpperCase().includes('BOM') && !key.toUpperCase().includes('ÓTIMO') && !key.toUpperCase().includes('REGULAR'))
+                    .reduce((sum, [, value]) => sum + value, 0);
+
+                const total = positive + neutral + negative;
+                const satisfaction = total > 0 ? Math.round((positive / total) * 100) : 0;
+
+                tableRows += `
+                    <tr>
+                        <td>${aspect.name}</td>
+                        <td>${positive}</td>
+                        <td>${neutral}</td>
+                        <td>${negative}</td>
+                        <td>${satisfaction}%</td>
+                    </tr>
+                `;
+            });
+
+            // Gerar lista de disciplinas avaliadas
+            let disciplinasList = '';
+            Object.keys(processedData.disciplinas).forEach(disc => {
+                const disciplina = processedData.disciplinas[disc];
+                const totalAfinidade = Object.values(disciplina.afinidade).reduce((sum, value) => sum + value, 0);
+                const afinidadePositiva = Object.entries(disciplina.afinidade)
+                    .filter(([key]) => key.toUpperCase().includes('ÓTIM') || key.toUpperCase().includes('BOM'))
+                    .reduce((sum, [, value]) => sum + value, 0);
+                const percentualAfinidade = totalAfinidade > 0 ? Math.round((afinidadePositiva / totalAfinidade) * 100) : 0;
+                
+                disciplinasList += `<li><strong>${disciplina.nome}:</strong> ${percentualAfinidade}% de afinidade positiva (${afinidadePositiva}/${totalAfinidade} respostas)</li>`;
+            });
+
+            // Gerar amostra de comentários
+            let comentariosSample = '';
+            if (processedData.comentarios.sentimentos.length > 0) {
+                comentariosSample += '<h4>🏫 Amostra de Comentários sobre a Escola:</h4><ul>';
+                processedData.comentarios.sentimentos.slice(0, 5).forEach((comentario, index) => {
+                    comentariosSample += `<li><em>"${comentario}"</em></li>`;
+                });
+                if (processedData.comentarios.sentimentos.length > 5) {
+                    comentariosSample += `<li><em>... e mais ${processedData.comentarios.sentimentos.length - 5} comentários</em></li>`;
+                }
+                comentariosSample += '</ul>';
+            }
+
+            if (processedData.comentarios.situacoesProfessores.length > 0) {
+                comentariosSample += '<h4>👨‍🏫 Amostra de Relatos sobre Professores:</h4><ul>';
+                processedData.comentarios.situacoesProfessores.slice(0, 5).forEach((comentario, index) => {
+                    comentariosSample += `<li><em>"${comentario}"</em></li>`;
+                });
+                if (processedData.comentarios.situacoesProfessores.length > 5) {
+                    comentariosSample += `<li><em>... e mais ${processedData.comentarios.situacoesProfessores.length - 5} comentários</em></li>`;
+                }
+                comentariosSample += '</ul>';
+            }
+
+            const reportHTML = `
+                <!DOCTYPE html>
+                <html lang="pt-BR">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Relatório Completo - Pesquisa Educacional</title>
+                    <style>
+                        * {
+                            margin: 0;
+                            padding: 0;
+                            box-sizing: border-box;
+                        }
+                        
+                        body {
+                            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                            line-height: 1.6;
+                            color: #333;
+                            background: #f8f9fa;
+                            padding: 20px;
+                        }
+                        
+                        .container {
+                            max-width: 1200px;
+                            margin: 0 auto;
+                            background: white;
+                            border-radius: 15px;
+                            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+                            overflow: hidden;
+                        }
+                        
+                        .header {
+                            background: linear-gradient(135deg, #1C355E 0%, #2F5F9E 50%, #8DA9C4 100%);
+                            color: white;
+                            padding: 40px;
+                            text-align: center;
+                        }
+                        
+                        .header-logo {
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                            gap: 20px;
+                            margin-bottom: 20px;
+                        }
+                        
+                        .logo-image {
+                            max-width: 120px;
+                            height: auto;
+                            filter: brightness(0) invert(1);
+                        }
+                        
+                        .header h1 {
+                            font-size: 2.5rem;
+                            margin-bottom: 10px;
+                            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+                        }
+                        
+                        .header .subtitle {
+                            font-size: 1.3rem;
+                            opacity: 0.9;
+                            font-weight: 300;
+                        }
+                        
+                        .info-grid {
+                            display: grid;
+                            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                            gap: 20px;
+                            margin: 30px 0;
+                            padding: 20px;
+                            background: rgba(255,255,255,0.1);
+                            border-radius: 10px;
+                            backdrop-filter: blur(10px);
+                        }
+                        
+                        .info-item {
+                            text-align: left;
+                        }
+                        
+                        .info-label {
+                            font-weight: bold;
+                            font-size: 0.9rem;
+                            opacity: 0.8;
+                            margin-bottom: 5px;
+                        }
+                        
+                        .info-value {
+                            font-size: 1.1rem;
+                            font-weight: 600;
+                        }
+                        
+                        .content {
+                            padding: 40px;
+                        }
+                        
+                        .stats-grid {
+                            display: grid;
+                            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                            gap: 20px;
+                            margin: 30px 0;
+                        }
+                        
+                        .stat-card {
+                            background: linear-gradient(135deg, #f8faff 0%, #e8f2ff 100%);
+                            border: 2px solid #1C355E;
+                            border-radius: 15px;
+                            padding: 25px;
+                            text-align: center;
+                            transition: transform 0.3s ease;
+                        }
+                        
+                        .stat-card:hover {
+                            transform: translateY(-5px);
+                        }
+                        
+                        .stat-number {
+                            font-size: 2.5rem;
+                            font-weight: bold;
+                            color: #1C355E;
+                            margin-bottom: 10px;
+                            text-shadow: 0 2px 4px rgba(28, 53, 94, 0.2);
+                        }
+                        
+                        .stat-label {
+                            font-size: 1rem;
+                            color: #666;
+                            text-transform: uppercase;
+                            letter-spacing: 1px;
+                            font-weight: bold;
+                        }
+                        
+                        .section {
+                            margin: 40px 0;
+                            padding: 30px;
+                            background: #f8f9fa;
+                            border-radius: 15px;
+                            border-left: 5px solid #1C355E;
+                        }
+                        
+                        .section h2 {
+                            color: #1C355E;
+                            margin-bottom: 20px;
+                            font-size: 1.8rem;
+                            display: flex;
+                            align-items: center;
+                            gap: 10px;
+                        }
+                        
+                        .section h3 {
+                            color: #2F5F9E;
+                            margin: 25px 0 15px 0;
+                            font-size: 1.4rem;
+                        }
+                        
+                        .section h4 {
+                            color: #1C355E;
+                            margin: 20px 0 10px 0;
+                            font-size: 1.2rem;
+                        }
+                        
+                        .table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin: 20px 0;
+                            background: white;
+                            border-radius: 10px;
+                            overflow: hidden;
+                            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+                        }
+                        
+                        .table th,
+                        .table td {
+                            padding: 15px;
+                            text-align: left;
+                            border-bottom: 1px solid #ddd;
+                        }
+                        
+                        .table th {
+                            background: linear-gradient(135deg, #1C355E 0%, #2F5F9E 100%);
+                            color: white;
+                            font-weight: bold;
+                            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+                        }
+                        
+                        .table tr:hover {
+                            background: #f5f5f5;
+                        }
+                        
+                        .insight-item {
+                            background: white;
+                            border-left: 4px solid #1C355E;
+                            padding: 20px;
+                            margin: 15px 0;
+                            border-radius: 0 10px 10px 0;
+                            box-shadow: 0 2px 8px rgba(28, 53, 94, 0.1);
+                        }
+                        
+                        .insight-item h4 {
+                            color: #1C355E;
+                            margin-bottom: 10px;
+                            font-weight: 600;
+                        }
+                        
+                        ul {
+                            padding-left: 25px;
+                            margin: 15px 0;
+                        }
+                        
+                        li {
+                            margin-bottom: 8px;
+                        }
+                        
+                        .footer {
+                            background: linear-gradient(135deg, #1C355E 0%, #2F5F9E 100%);
+                            color: white;
+                            padding: 30px;
+                            text-align: center;
+                            margin-top: 40px;
+                        }
+                        
+                        .footer p {
+                            margin: 5px 0;
+                        }
+                        
+                        .print-btn {
+                            background: linear-gradient(45deg, #28a745, #20c997);
+                            color: white;
+                            padding: 15px 30px;
+                            border: none;
+                            border-radius: 10px;
+                            cursor: pointer;
+                            font-size: 1.1rem;
+                            margin: 20px auto;
+                            display: block;
+                            transition: all 0.3s ease;
+                            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+                            font-weight: bold;
+                        }
+                        
+                        .print-btn:hover {
+                            transform: translateY(-2px);
+                            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+                        }
+                        
+                        @media print {
+                            body { 
+                                background: white; 
+                                padding: 0; 
+                            }
+                            .container { 
+                                box-shadow: none; 
+                                border-radius: 0; 
+                            }
+                            .print-btn { 
+                                display: none; 
+                            }
+                        }
+                        
+                        @media (max-width: 768px) {
+                            .header h1 {
+                                font-size: 2rem;
+                            }
+                            .info-grid {
+                                grid-template-columns: 1fr;
+                            }
+                            .stats-grid {
+                                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                            }
+                            .content {
+                                padding: 20px;
+                            }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="header">
+                            <div class="header-logo">
+                                <img src="https://i.ibb.co/Ld7f2SqF/educavisor.png" alt="EDUCAVISOR Logo" class="logo-image">
+                                <h1>EDUCAVISOR</h1>
+                            </div>
+                            <p class="subtitle">Relatório Analítico dos Resultados do Pré-Conselho Escolar</p>
+                            
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <div class="info-label">🏫 Unidade Escolar</div>
+                                    <div class="info-value">${unidadeEscolar}</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">👥 Turmas Avaliadas</div>
+                                    <div class="info-value">${turmasAvaliadas}</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">📅 Período de Aplicação</div>
+                                    <div class="info-value">${periodoAplicacao}</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">👨‍💼 Responsável Técnico</div>
+                                    <div class="info-value">Gestor Pedagógico</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="content">
+                            <button class="print-btn" onclick="window.print()">🖨️ Imprimir Relatório</button>
+                            
+                            <div class="section">
+                                <h2>📊 Dados Gerais da Pesquisa</h2>
+                                <div class="stats-grid">
+                                    <div class="stat-card">
+                                        <div class="stat-number">${totalRespostasValidas}</div>
+                                        <div class="stat-label">Total de Respostas</div>
+                                    </div>
+                                    <div class="stat-card">
+                                        <div class="stat-number">${Math.round((bonsRespeitoColegas / totalRespostasValidas) * 100)}%</div>
+                                        <div class="stat-label">Bom Respeito entre Colegas</div>
+                                    </div>
+                                    <div class="stat-card">
+                                        <div class="stat-number">${Math.round((bonsRespeitoProfessores / totalRespostasValidas) * 100)}%</div>
+                                        <div class="stat-label">Bom Respeito aos Professores</div>
+                                    </div>
+                                    <div class="stat-card">
+                                        <div class="stat-number">${Math.round((avaliacoesPositivasTurma / totalRespostasValidas) * 100)}%</div>
+                                        <div class="stat-label">Avaliação Positiva da Turma</div>
+                                    </div>
+                                    <div class="stat-card">
+                                        <div class="stat-number">${Math.round((avaliacoesPositivasEscola / totalRespostasValidas) * 100)}%</div>
+                                        <div class="stat-label">Avaliação Positiva da Escola</div>
+                                    </div>
+                                    <div class="stat-card">
+                                        <div class="stat-number">${Object.keys(processedData.disciplinas).length}</div>
+                                        <div class="stat-label">Disciplinas Avaliadas</div>
+                                    </div>
+                                    <div class="stat-card">
+                                        <div class="stat-number">${Math.round((inclusaoOtima / totalRespostasValidas) * 100)}%</div>
+                                        <div class="stat-label">Excelente Inclusão</div>
+                                    </div>
+                                    <div class="stat-card">
+                                        <div class="stat-number">${processedData.comentarios.sentimentos.length + processedData.comentarios.situacoesProfessores.length}</div>
+                                        <div class="stat-label">Comentários Coletados</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="section">
+                                <h2>📋 Informações Detalhadas por Aspecto</h2>
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Aspecto Avaliado</th>
+                                            <th>Respostas Positivas</th>
+                                            <th>Respostas Neutras</th>
+                                            <th>Respostas Negativas</th>
+                                            <th>% Satisfação</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${tableRows}
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div class="section">
+                                <h2>📚 Análise das Disciplinas</h2>
+                                <h3>🏆 Disciplina Destaque</h3>
+                                <div class="insight-item">
+                                    <h4>${melhorDisciplina}</h4>
+                                    <p>Apresenta ${Math.round(melhorPercentual)}% de satisfação dos estudantes, sendo a disciplina com melhor avaliação de afinidade.</p>
+                                </div>
+                                
+                                <h3>📊 Detalhamento por Disciplina</h3>
+                                <ul>
+                                    ${disciplinasList}
+                                </ul>
+                            </div>
+                            
+                            <div class="section">
+                                <h2>💡 Principais Insights</h2>
+                                <div class="insight-item">
+                                    <h4>🎯 Frequência Escolar</h4>
+                                    <p>Identificada necessidade de atenção para reduzir faltas injustificadas. Recomenda-se implementar estratégias de engajamento estudantil.</p>
+                                </div>
+                                <div class="insight-item">
+                                    <h4>👥 Ambiente da Turma</h4>
+                                    <p>Turmas apresentam potencial de melhoria na concentração, com relatos de conversas paralelas. Sugestão: implementar dinâmicas de grupo.</p>
+                                </div>
+                                <div class="insight-item">
+                                    <h4>🏫 Satisfação com a Escola</h4>
+                                    <p>Estudantes demonstram boa adaptação ao ambiente escolar, com avaliações majoritariamente positivas sobre a instituição.</p>
+                                </div>
+                                <div class="insight-item">
+                                    <h4>🤝 Trabalho de Inclusão</h4>
+                                    <p>${Math.round((inclusaoOtima / totalRespostasValidas) * 100)}% dos estudantes avaliam como ótima a inclusão realizada pelo segundo professor, demonstrando efetividade no apoio especializado.</p>
+                                </div>
+                                <div class="insight-item">
+                                    <h4>📚 Relacionamento Interpessoal</h4>
+                                    <p>Alto nível de respeito entre colegas (${Math.round((bonsRespeitoColegas / totalRespostasValidas) * 100)}%) e professores (${Math.round((bonsRespeitoProfessores / totalRespostasValidas) * 100)}%), indicando ambiente escolar saudável.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="section">
+                                <h2>💬 Feedback Qualitativo dos Estudantes</h2>
+                                ${comentariosSample}
+                            </div>
+                            
+                            <div class="section">
+                                <h2>📈 Recomendações e Próximos Passos</h2>
+                                <h3>💡 Recomendações Prioritárias</h3>
+                                <ul>
+                                    <li><strong>Frequência Escolar:</strong> Implementar programas de incentivo à frequência e identificar causas das faltas</li>
+                                    <li><strong>Concentração em Sala:</strong> Desenvolver estratégias para reduzir conversas paralelas e melhorar o foco</li>
+                                    <li><strong>Práticas Pedagógicas:</strong> Manter e expandir as práticas que geram satisfação estudantil</li>
+                                    <li><strong>Integração Social:</strong> Criar mais oportunidades de integração e colaboração entre estudantes</li>
+                                    <li><strong>Apoio Especializado:</strong> Continuar fortalecendo o trabalho de inclusão já bem avaliado</li>
+                                </ul>
+                                
+                                <h3>📅 Cronograma Sugerido</h3>
+                                <ul>
+                                    <li><strong>Curto Prazo (30 dias):</strong> Implementar estratégias para reduzir conversas paralelas</li>
+                                    <li><strong>Médio Prazo (90 dias):</strong> Desenvolver programa de incentivo à frequência</li>
+                                    <li><strong>Longo Prazo (180 dias):</strong> Avaliar impacto das medidas implementadas</li>
+                                    <li><strong>Acompanhamento:</strong> Reaplicar pesquisa trimestralmente para monitoramento</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="section">
+                                <h2>📊 Relatório Executivo Consolidado</h2>
+                                
+                                <h3>🏫 Cabeçalho Institucional</h3>
+                                <div style="background: white; padding: 20px; border-radius: 10px; border: 2px solid #1C355E; margin: 20px 0;">
+                                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                                        <div>
+                                            <strong style="color: #1C355E;">🏫 Unidade Escolar:</strong><br>
+                                            <span style="font-size: 1.1rem;">${unidadeEscolar}</span>
+                                        </div>
+                                        <div>
+                                            <strong style="color: #1C355E;">👥 Turmas Avaliadas:</strong><br>
+                                            <span style="font-size: 1.1rem;">${turmasAvaliadas}</span>
+                                        </div>
+                                        <div>
+                                            <strong style="color: #1C355E;">📅 Período de Aplicação:</strong><br>
+                                            <span style="font-size: 1.1rem;">${periodoAplicacao}</span>
+                                        </div>
+                                        <div>
+                                            <strong style="color: #1C355E;">👨‍💼 Responsável Técnico:</strong><br>
+                                            <span style="font-size: 1.1rem;">Gestor Pedagógico</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <h3>📋 Síntese Executiva</h3>
+                                <p style="text-align: justify; line-height: 1.8; font-size: 1.05rem;">
+                                    Este relatório sintetiza as percepções de <strong>${totalRespostasValidas} estudantes</strong> sobre o ambiente escolar, práticas pedagógicas e inclusão, abrangendo <strong>${Object.keys(processedData.disciplinas).length} componentes curriculares</strong>. Os dados apontam para um ambiente respeitoso entre colegas (<strong>${Math.round((bonsRespeitoColegas / totalRespostasValidas) * 100)}%</strong>) e professores (<strong>${Math.round((bonsRespeitoProfessores / totalRespostasValidas) * 100)}%</strong>), mas também revelam desafios como a frequência escolar irregular e dispersão em sala de aula. A atuação do segundo professor foi altamente valorizada (<strong>${Math.round((inclusaoOtima / totalRespostasValidas) * 100)}% consideram ótima</strong>), evidenciando a importância do apoio à inclusão.
+                                </p>
+                                
+                                <p style="text-align: justify; line-height: 1.8; font-size: 1.05rem;">
+                                    Além disso, <strong>${processedData.comentarios.sentimentos.length + processedData.comentarios.situacoesProfessores.length} comentários qualitativos</strong> forneceram um panorama detalhado das percepções dos alunos, enriquecendo os dados quantitativos e possibilitando recomendações práticas, como o fortalecimento de ações para melhoria da concentração em sala, manutenção de estratégias bem avaliadas e promoção da integração entre os estudantes.
+                                </p>
+                                
+                                <h3>🎯 Principais Indicadores</h3>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0;">
+                                    <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; text-align: center; border-left: 4px solid #28a745;">
+                                        <div style="font-size: 1.8rem; font-weight: bold; color: #28a745;">${Math.round((bonsRespeitoColegas / totalRespostasValidas) * 100)}%</div>
+                                        <div style="font-size: 0.9rem; color: #666;">Respeito entre Colegas</div>
+                                    </div>
+                                    <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; text-align: center; border-left: 4px solid #28a745;">
+                                        <div style="font-size: 1.8rem; font-weight: bold; color: #28a745;">${Math.round((bonsRespeitoProfessores / totalRespostasValidas) * 100)}%</div>
+                                        <div style="font-size: 0.9rem; color: #666;">Respeito aos Professores</div>
+                                    </div>
+                                    <div style="background: #fff3cd; padding: 15px; border-radius: 8px; text-align: center; border-left: 4px solid #ffc107;">
+                                        <div style="font-size: 1.8rem; font-weight: bold; color: #856404;">${Math.round((avaliacoesPositivasTurma / totalRespostasValidas) * 100)}%</div>
+                                        <div style="font-size: 0.9rem; color: #666;">Avaliação Positiva da Turma</div>
+                                    </div>
+                                    <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; text-align: center; border-left: 4px solid #28a745;">
+                                        <div style="font-size: 1.8rem; font-weight: bold; color: #28a745;">${Math.round((avaliacoesPositivasEscola / totalRespostasValidas) * 100)}%</div>
+                                        <div style="font-size: 0.9rem; color: #666;">Satisfação com a Escola</div>
+                                    </div>
+                                    <div style="background: #d1ecf1; padding: 15px; border-radius: 8px; text-align: center; border-left: 4px solid #17a2b8;">
+                                        <div style="font-size: 1.8rem; font-weight: bold; color: #0c5460;">${Math.round((inclusaoOtima / totalRespostasValidas) * 100)}%</div>
+                                        <div style="font-size: 0.9rem; color: #666;">Excelente Inclusão</div>
+                                    </div>
+                                    <div style="background: #f8d7da; padding: 15px; border-radius: 8px; text-align: center; border-left: 4px solid #dc3545;">
+                                        <div style="font-size: 1.8rem; font-weight: bold; color: #721c24;">${Object.entries(processedData.frequenciaAulas).filter(([key]) => key.toLowerCase().includes('falto')).reduce((sum, [, value]) => sum + value, 0)}</div>
+                                        <div style="font-size: 0.9rem; color: #666;">Estudantes com Faltas</div>
+                                    </div>
+                                </div>
+                                
+                                <h3>💡 Insights e Descobertas</h3>
+                                <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; border-left: 4px solid #1C355E;">
+                                    <ul style="margin: 0; padding-left: 20px;">
+                                        <li style="margin-bottom: 10px;"><strong>Ambiente Respeitoso:</strong> ${Math.round((bonsRespeitoColegas / totalRespostasValidas) * 100)}% dos estudantes demonstram bom respeito entre colegas e ${Math.round((bonsRespeitoProfessores / totalRespostasValidas) * 100)}% com professores, indicando clima escolar saudável.</li>
+                                        <li style="margin-bottom: 10px;"><strong>Desafio da Frequência:</strong> Identificados ${Object.entries(processedData.frequenciaAulas).filter(([key]) => key.toLowerCase().includes('falto')).reduce((sum, [, value]) => sum + value, 0)} estudantes com faltas recorrentes, demandando estratégias de engajamento.</li>
+                                        <li style="margin-bottom: 10px;"><strong>Concentração em Sala:</strong> Relatos de conversas paralelas indicam necessidade de dinâmicas mais envolventes.</li>
+                                        <li style="margin-bottom: 10px;"><strong>Trabalho de Inclusão Exemplar:</strong> ${Math.round((inclusaoOtima / totalRespostasValidas) * 100)}% avaliam como ótima a atuação do segundo professor, modelo a ser mantido.</li>
+                                        <li style="margin-bottom: 10px;"><strong>Satisfação Institucional:</strong> ${Math.round((avaliacoesPositivasEscola / totalRespostasValidas) * 100)}% de satisfação com a escola demonstra boa adaptação dos estudantes.</li>
+                                        <li style="margin-bottom: 10px;"><strong>Disciplina Destaque:</strong> ${melhorDisciplina} apresenta ${Math.round(melhorPercentual)}% de afinidade positiva, servindo como referência pedagógica.</li>
+                                    </ul>
+                                </div>
+                                
+                                <h3>📋 Recomendações Estratégicas</h3>
+                                <div style="background: white; padding: 20px; border-radius: 10px; border: 1px solid #ddd;">
+                                    <p style="margin-bottom: 15px; font-weight: bold; color: #1C355E;">Com base nesses dados, recomenda-se:</p>
+                                    <ul style="margin: 0; padding-left: 20px;">
+                                        <li style="margin-bottom: 8px;"><strong>Monitoramento sistemático</strong> dos indicadores em ciclos trimestrais;</li>
+                                        <li style="margin-bottom: 8px;"><strong>Adoção de políticas de presença</strong> mais eficazes para reduzir faltas injustificadas;</li>
+                                        <li style="margin-bottom: 8px;"><strong>Incentivo a práticas colaborativas</strong> e inclusivas no cotidiano escolar;</li>
+                                        <li style="margin-bottom: 8px;"><strong>Implementação de estratégias</strong> para melhoria da concentração em sala de aula;</li>
+                                        <li style="margin-bottom: 8px;"><strong>Manutenção e expansão</strong> das práticas pedagógicas bem avaliadas;</li>
+                                        <li style="margin-bottom: 8px;"><strong>Fortalecimento do trabalho</strong> do segundo professor como referência de inclusão.</li>
+                                    </ul>
+                                </div>
+                                
+                                <h3>🎯 Considerações Finais</h3>
+                                <p style="text-align: justify; line-height: 1.8; font-size: 1.05rem; background: #e8f2ff; padding: 20px; border-radius: 10px; border-left: 4px solid #1C355E;">
+                                    Este relatório visa subsidiar a tomada de decisões da equipe gestora, promovendo uma escola mais acolhedora, eficiente e centrada no estudante. Os dados revelam um ambiente escolar com bases sólidas de respeito e satisfação, mas com oportunidades claras de melhoria na frequência e concentração. A continuidade do trabalho de inclusão e o monitoramento sistemático dos indicadores são fundamentais para o aprimoramento contínuo da qualidade educacional.
+                                </p>
+                                
+                                <div style="text-align: center; margin-top: 30px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                                    <p style="margin: 0; font-style: italic; color: #666;">
+                                        <strong>Relatório gerado em:</strong> ${new Date().toLocaleString('pt-BR')}<br>
+                                        <strong>Próxima avaliação sugerida:</strong> ${new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toLocaleDateString('pt-BR')} (90 dias)
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="footer">
+                            <p><strong>© 2025 Luiz Alessandro Tecnologia Educacional</strong></p>
+                            <p>Desenvolvido por Luiz Alessandro da Silva</p>
+                            <p>Relatório gerado em: ${new Date().toLocaleString('pt-BR')}</p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+            `;
+
+            // Abrir relatório em nova aba
+            const newWindow = window.open('', '_blank');
+            newWindow.document.write(reportHTML);
+            newWindow.document.close();
+        }
+
+        function setupHoverCards() {
+            const hoverCards = document.querySelectorAll('.hover-card');
+            let currentTooltip = null;
+            let hoverTimeout = null;
+            let hideTimeout = null;
+
+            hoverCards.forEach(card => {
+                card.addEventListener('mouseenter', function(e) {
+                    // Limpar timeouts anteriores
+                    if (hoverTimeout) clearTimeout(hoverTimeout);
+                    if (hideTimeout) clearTimeout(hideTimeout);
+                    
+                    const hoverData = this.getAttribute('data-hover');
+                    
+                    // Se já existe um tooltip, apenas atualizar conteúdo
+                    if (currentTooltip) {
+                        currentTooltip.innerHTML = hoverData;
+                        positionTooltip(currentTooltip, this);
+                        currentTooltip.classList.add('show');
+                        return;
+                    }
+                    
+                    // Criar novo tooltip com delay suave
+                    hoverTimeout = setTimeout(() => {
+                        // Remover tooltip anterior se existir
+                        if (currentTooltip) {
+                            currentTooltip.remove();
+                        }
+                        
+                        // Criar novo tooltip
+                        const tooltip = document.createElement('div');
+                        tooltip.className = 'hover-tooltip';
+                        tooltip.innerHTML = hoverData;
+                        
+                        // Adicionar ao DOM primeiro (invisível)
+                        document.body.appendChild(tooltip);
+                        
+                        // Posicionar tooltip
+                        positionTooltip(tooltip, this);
+                        
+                        // Mostrar tooltip com animação suave
+                        requestAnimationFrame(() => {
+                            tooltip.classList.add('show');
+                        });
+                        
+                        currentTooltip = tooltip;
+                    }, 200); // Delay de 200ms para evitar tooltips desnecessários
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    // Limpar timeout de criação se ainda não executou
+                    if (hoverTimeout) {
+                        clearTimeout(hoverTimeout);
+                        hoverTimeout = null;
+                    }
+                    
+                    if (currentTooltip) {
+                        currentTooltip.classList.remove('show');
+                        
+                        // Remover tooltip após animação
+                        hideTimeout = setTimeout(() => {
+                            if (currentTooltip) {
+                                currentTooltip.remove();
+                                currentTooltip = null;
+                            }
+                        }, 300); // Tempo da animação CSS
+                    }
+                });
+            });
+            
+            // Função auxiliar para posicionar tooltip
+            function positionTooltip(tooltip, card) {
+                const cardRect = card.getBoundingClientRect();
+                const tooltipRect = tooltip.getBoundingClientRect();
+                
+                // Posicionar acima do cartão por padrão
+                let top = cardRect.top - tooltipRect.height - 15;
+                let left = cardRect.left + (cardRect.width / 2) - (tooltipRect.width / 2);
+                
+                // Verificar se tooltip sai da parte superior da tela
+                if (top < 10) {
+                    // Posicionar abaixo do cartão
+                    top = cardRect.bottom + 15;
+                    // Inverter a seta do tooltip
+                    tooltip.style.setProperty('--arrow-position', 'top');
+                } else {
+                    tooltip.style.setProperty('--arrow-position', 'bottom');
+                }
+                
+                // Ajustar posição horizontal se sair da tela
+                if (left < 10) {
+                    left = 10;
+                } else if (left + tooltipRect.width > window.innerWidth - 10) {
+                    left = window.innerWidth - tooltipRect.width - 10;
+                }
+                
+                tooltip.style.top = (top + window.scrollY) + 'px';
+                tooltip.style.left = left + 'px';
+            }
+        }
+
+        function printReport() {
+            // Criar uma nova janela para impressão
+            const printWindow = window.open('', '_blank');
+            const reportContent = document.getElementById('reportContent').innerHTML;
+            
+            // Obter estatísticas principais para incluir no relatório
+            const stats = {
+                totalRespostas: processedData.totalRespostas,
+                disciplinasAvaliadas: Object.keys(processedData.disciplinas).length,
+                comentarios: processedData.comentarios.sentimentos.length + processedData.comentarios.situacoesProfessores.length
+            };
+            
+            const printContent = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Relatório de Pesquisa Educacional</title>
+                    <style>
+                        body {
+                            font-family: Arial, sans-serif;
+                            line-height: 1.6;
+                            margin: 20px;
+                            color: #333;
+                        }
+                        h1, h2, h3, h4 {
+                            color: #2c3e50;
+                        }
+                        h1 {
+                            text-align: center;
+                            border-bottom: 3px solid #3498db;
+                            padding-bottom: 10px;
+                        }
+                        .stats-summary {
+                            background: #f8f9fa;
+                            padding: 15px;
+                            border-radius: 8px;
+                            margin: 20px 0;
+                        }
+                        .stats-grid {
+                            display: grid;
+                            grid-template-columns: repeat(3, 1fr);
+                            gap: 15px;
+                            margin: 15px 0;
+                        }
+                        .stat-item {
+                            text-align: center;
+                            padding: 10px;
+                            background: white;
+                            border-radius: 5px;
+                            border: 1px solid #ddd;
+                        }
+                        .stat-number {
+                            font-size: 1.5em;
+                            font-weight: bold;
+                            color: #3498db;
+                        }
+                        ul {
+                            padding-left: 20px;
+                        }
+                        li {
+                            margin-bottom: 8px;
+                        }
+                        .footer {
+                            margin-top: 30px;
+                            text-align: center;
+                            font-size: 0.9em;
+                            color: #666;
+                            border-top: 1px solid #ddd;
+                            padding-top: 15px;
+                        }
+                        @media print {
+                            body { margin: 0; }
+                            .no-print { display: none; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <h1>📊 Relatório de Pesquisa Educacional</h1>
+                    <p style="text-align: center; font-style: italic;">Escola Honório Miranda - ${new Date().toLocaleDateString('pt-BR')}</p>
+                    
+                    <div class="stats-summary">
+                        <h3>📊 Resumo dos Dados</h3>
+                        <div class="stats-grid">
+                            <div class="stat-item">
+                                <div class="stat-number">${stats.totalRespostas}</div>
+                                <div>Total de Respostas</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-number">${stats.disciplinasAvaliadas}</div>
+                                <div>Disciplinas Avaliadas</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-number">${stats.comentarios}</div>
+                                <div>Comentários Coletados</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    ${reportContent}
+                    
+                    <div class="footer">
+                        <p><strong>© 2025 Luiz Alessandro Tecnologia Educacional</strong></p>
+                        <p>Desenvolvido por Luiz Alessandro da Silva</p>
+                        <p>Relatório gerado em: ${new Date().toLocaleString('pt-BR')}</p>
+                    </div>
+                </body>
+                </html>
+            `;
+            
+            printWindow.document.write(printContent);
+            printWindow.document.close();
+            printWindow.print();
+        }
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,312 @@
+
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Página de Abertura</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #000000;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+        }
+
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .image-container {
+            position: relative;
+            width: 800px;
+            height: 600px;
+            margin-bottom: 8px;
+            overflow: hidden;
+        }
+
+        .main-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: brightness(0) invert(1);
+            transform: translateX(100%);
+            animation: slideReveal 3s ease-out forwards;
+        }
+
+        .image-mask {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to right, transparent 0%, #000000 100%);
+            animation: maskReveal 3s ease-out forwards;
+        }
+
+        @keyframes slideReveal {
+            0% {
+                transform: translateX(100%);
+            }
+            100% {
+                transform: translateX(0%);
+            }
+        }
+
+        @keyframes maskReveal {
+            0% {
+                background: linear-gradient(to right, transparent 0%, #000000 100%);
+            }
+            100% {
+                background: linear-gradient(to right, transparent 100%, #000000 100%);
+            }
+        }
+
+        .progress-container {
+            width: 800px;
+            height: 12px;
+            background-color: transparent;
+            border: 1px solid #ffffff;
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: #ffffff;
+            width: 0%;
+            transition: width 0.1s ease;
+            animation: progressFill 3s ease-out forwards;
+        }
+
+        @keyframes progressFill {
+            0% {
+                width: 0%;
+            }
+            100% {
+                width: 100%;
+            }
+        }
+
+        .progress-text {
+            color: #ffffff;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 5px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .static-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(255, 255, 255, 0.03) 2px,
+                rgba(255, 255, 255, 0.03) 4px
+            );
+            opacity: 0;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .static-overlay.active {
+            animation: staticEffect 2s ease-in-out;
+        }
+
+        @keyframes staticEffect {
+            0%, 100% {
+                opacity: 0;
+            }
+            10%, 30%, 50%, 70%, 90% {
+                opacity: 0.8;
+                background: repeating-linear-gradient(
+                    0deg,
+                    rgba(255, 255, 255, 0.1),
+                    rgba(255, 255, 255, 0.1) 1px,
+                    rgba(0, 0, 0, 0.1) 1px,
+                    rgba(0, 0, 0, 0.1) 2px
+                );
+            }
+            20%, 40%, 60%, 80% {
+                opacity: 0.3;
+                background: repeating-linear-gradient(
+                    90deg,
+                    rgba(255, 255, 255, 0.05),
+                    rgba(255, 255, 255, 0.05) 2px,
+                    rgba(0, 0, 0, 0.05) 2px,
+                    rgba(0, 0, 0, 0.05) 4px
+                );
+            }
+        }
+
+        .flicker {
+            animation: flicker 0.1s infinite;
+        }
+
+        @keyframes flicker {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.3;
+            }
+        }
+
+        .access-button {
+            background-color: transparent;
+            color: #ffffff;
+            border: 2px solid #ffffff;
+            padding: 15px 40px;
+            font-size: 18px;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            margin-top: 30px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .access-button:hover {
+            background-color: #ffffff;
+            color: #000000;
+            transform: translateY(0px) scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+        }
+
+        .access-button.show {
+            opacity: 1;
+            transform: translateY(0px);
+            animation: buttonGlow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes buttonGlow {
+            0% {
+                box-shadow: 0 0 5px rgba(255, 255, 255, 0.2);
+            }
+            100% {
+                box-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .image-container {
+                width: 600px;
+                height: 450px;
+            }
+            
+            .progress-container {
+                width: 600px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .image-container {
+                width: 500px;
+                height: 375px;
+            }
+            
+            .progress-container {
+                width: 500px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="image-container">
+            <img src="https://i.ibb.co/XfzFLDTb/Untitled-design.png" alt="Logo" class="main-image">
+            <div class="image-mask"></div>
+        </div>
+        
+        <div class="progress-text">0%</div>
+        <div class="progress-container">
+            <div class="progress-bar"></div>
+        </div>
+        
+        <button class="access-button" onclick="accessSite()">Acessar Site</button>
+    </div>
+    
+    <div class="static-overlay"></div>
+
+    <script>
+
+
+        // Iniciar animação e efeitos
+        function startAnimation() {
+            const progressBar = document.querySelector('.progress-bar');
+            const progressText = document.querySelector('.progress-text');
+            const staticOverlay = document.querySelector('.static-overlay');
+            const body = document.body;
+            
+
+            
+            // Atualizar barra de progresso
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += 1;
+                progressBar.style.width = progress + '%';
+                progressText.textContent = progress + '%';
+                
+                if (progress >= 100) {
+                    clearInterval(progressInterval);
+                    
+
+                    
+                    // Aguardar um pouco antes do efeito estático visual
+                    setTimeout(() => {
+                        // Ativar efeito visual estático (sem som)
+                        staticOverlay.classList.add('active');
+                        body.classList.add('flicker');
+                        
+                        // Remover efeitos visuais após 2 segundos, mas manter som
+                        setTimeout(() => {
+                            staticOverlay.classList.remove('active');
+                            body.classList.remove('flicker');
+                            
+                            // Mostrar botão de acesso após efeitos visuais terminarem
+                            const accessButton = document.querySelector('.access-button');
+                            accessButton.classList.add('show');
+                        }, 2000);
+                        
+                    }, 500);
+                }
+            }, 30); // Atualizar a cada 30ms para sincronizar com a animação de 3s
+        }
+
+        // Iniciar quando a página carregar
+        window.addEventListener('load', () => {
+            startAnimation();
+        });
+
+        // Função para acessar o site
+        function accessSite() {
+            window.location.href = 'inicial.html';
+        }
+
+
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'969ec91792cef1de',t:'MTc1NDMxODE3MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
